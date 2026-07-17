@@ -1,0 +1,27 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file first
+COPY apps/api/requirements.txt ./apps/api/
+
+# Install python dependencies
+RUN pip install --no-cache-dir -r apps/api/requirements.txt
+
+# Copy rest of the API source code
+COPY apps/api/ ./apps/api/
+
+WORKDIR /app/apps/api
+
+EXPOSE 8000
+
+ENV PORT=8000
+ENV PYTHONUNBUFFERED=1
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

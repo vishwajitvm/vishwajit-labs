@@ -29,7 +29,8 @@ export default function Hero({ onTerminalToggle }: HeroProps) {
 
   const handleDownloadResume = async (type: 'ai' | 'fullstack') => {
     try {
-      await fetch('http://localhost:8000/api/analytics/log-download', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
+      await fetch(`${apiUrl}/api/analytics/log-download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ file_type: `resume_${type}`, source: 'hero_button' })

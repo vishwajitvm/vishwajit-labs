@@ -72,7 +72,8 @@ export default function Terminal({ isOpen, onClose }: TerminalProps) {
       case 'resume':
         if (subCommand === 'ai') {
           response = 'Initiating AI Engineering resume download sequence...';
-          fetch('http://localhost:8000/api/analytics/log-download', {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
+          fetch(`${apiUrl}/api/analytics/log-download`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ file_type: 'resume_ai', source: 'terminal' })
@@ -80,7 +81,8 @@ export default function Terminal({ isOpen, onClose }: TerminalProps) {
           window.open('/assets/resume-ai.pdf', '_blank');
         } else if (subCommand === 'fullstack') {
           response = 'Initiating Full Stack resume download sequence...';
-          fetch('http://localhost:8000/api/analytics/log-download', {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
+          fetch(`${apiUrl}/api/analytics/log-download`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ file_type: 'resume_fullstack', source: 'terminal' })

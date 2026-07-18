@@ -21,7 +21,8 @@ export default function Home() {
     // Log visit to local backend analytics database
     const logVisit = async () => {
       try {
-        await fetch('http://localhost:8000/api/analytics/log-visit', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
+        await fetch(`${apiUrl}/api/analytics/log-visit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -52,6 +52,7 @@ async def send_email_via_resend(form: ContactForm):
         return response.status_code == 200
 
 @router.post("")
+@router.post("/")
 async def create_contact(form: ContactForm, db = Depends(get_database)):
     if db is None:
         raise HTTPException(status_code=500, detail="Database connection not initialized")

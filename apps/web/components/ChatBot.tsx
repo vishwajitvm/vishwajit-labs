@@ -31,7 +31,8 @@ export default function ChatBot() {
 
     try {
       // API stream target
-      const response = await fetch('http://localhost:8000/api/chat/stream', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
+      const response = await fetch(`${apiUrl}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

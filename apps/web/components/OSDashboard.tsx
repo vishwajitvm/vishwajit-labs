@@ -28,7 +28,8 @@ export default function OSDashboard() {
     queryKey: ['githubStats'],
     queryFn: async () => {
       // API call to fastapi backend proxies endpoint
-      const res = await fetch('http://localhost:8000/api/github/stats');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
+      const res = await fetch(`${apiUrl}/api/github/stats`);
       if (!res.ok) {
         throw new Error('Failed to load stats');
       }

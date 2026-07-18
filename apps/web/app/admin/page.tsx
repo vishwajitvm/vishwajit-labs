@@ -32,7 +32,8 @@ export default function AdminDashboard() {
   const { data, isLoading } = useQuery<StatsResponse>({
     queryKey: ['adminStats'],
     queryFn: async () => {
-      const res = await fetch('http://localhost:8000/api/analytics/dashboard-stats');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
+      const res = await fetch(`${apiUrl}/api/analytics/dashboard-stats`);
       if (!res.ok) {
         throw new Error('API offline');
       }

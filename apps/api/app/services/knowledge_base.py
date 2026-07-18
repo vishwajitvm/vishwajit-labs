@@ -17,9 +17,9 @@ VISHWAJIT_KB = {
             "company": "Vishwajit Labs",
             "period": "2024 - Present",
             "points": [
-                "Built and launched TraceNest, a distributed tracing SDK and telemetry dashboard handling up to 10M events per day.",
-                "Architected TenantMind AI, a multi-tenant enterprise RAG engine with scoped database access filters.",
-                "Engineered Model Context Protocol (MCP) servers bridging local dev database environments directly with LLMs."
+                "Built and launched TraceNest, a developer-first Python logging SDK & UI dashboard served from FastAPI applications.",
+                "Architected TenantMind AI, an intelligent property management RAG engine with scoped Keycloak OIDC tenant isolation filters.",
+                "Engineered Model Context Protocol (MCP) servers bridging local databases environments directly with LLMs."
             ]
         },
         {
@@ -37,37 +37,82 @@ VISHWAJIT_KB = {
             "id": "tracenest",
             "name": "TraceNest",
             "type": "Telemetry / SDK",
-            "description": "Distributed tracing SDK and dashboard for FastAPI & Microservices. Simplifies telemetry monitoring for distributed backends.",
-            "tech_stack": ["Python", "FastAPI", "Redis", "ClickHouse", "OpenTelemetry"],
-            "architecture": "SDK hooks into FastAPI middlewares -> streams OpenTelemetry data asynchronously to a high-speed broker -> parsed & written to ClickHouse -> React dashboard queries ClickHouse for live waterfall graphs.",
-            "challenges": "Handling massive throughput without blocking event loops. Solved by writing an asynchronous in-memory log buffer queue draining to worker processes."
+            "description": "A developer-first, local-first logging SDK for Python applications that automatically handles creation, rotation, and retention of structured logs, complete with a built-in FastAPI log stream UI.",
+            "tech_stack": ["Python", "FastAPI", "OpenTelemetry", "Uvicorn"],
+            "architecture": "TraceNest logs to TraceNestLogs/ directory -> parses logs asynchronously -> renders real-time streams, filters, and theme options directly via an embedded UI endpoint (/tracenest) inside FastAPI.",
+            "challenges": "Providing local-first structured logging with zero setup. Solved by writing custom non-blocking file rotation handlers with thread-safe file locks."
         },
         {
             "id": "tenantmind-ai",
             "name": "TenantMind AI",
-            "type": "AI Platform",
-            "description": "Multi-tenant RAG engine with strict tenant isolation, customizable vector databases, and modular agent plugins.",
-            "tech_stack": ["Python", "FastAPI", "MongoDB Atlas", "Pinecone", "LangChain", "Gemini Pro"],
-            "architecture": "Tenant JWT identifies scope -> queries Pinecone namespaces dynamically -> constructs prompt with namespace vectors -> forwards context to Gemini with system guardrails.",
-            "challenges": "Data leakage prevention across tenants. Solved by building custom middleware injecting namespace qualifiers directly into MongoDB & Pinecone clients."
+            "type": "AI Property Management",
+            "description": "A multi-tenant property management platform using Keycloak OIDC identities to enforce tenant database scopes, parsing PDF lease files via Celery queues, and routing semantic RAG prompts.",
+            "tech_stack": ["Python", "FastAPI", "MongoDB", "Qdrant", "Keycloak", "Celery", "Redis"],
+            "architecture": "FastAPI verifies Keycloak JWT -> filters tenant MongoDB context -> pulls semantic chunks from Qdrant vector db using tenant qualifiers namespaces -> synthesizes reply.",
+            "challenges": "Secure data segmentation for multi-vendor properties. Solved by building custom FastAPI dependencies that enforce Keycloak OIDC tenant qualifiers at both database and vector search boundaries."
         },
         {
             "id": "policybot",
             "name": "PolicyBot",
-            "type": "AI Agent",
-            "description": "Compliance-checking AI agent leveraging Model Context Protocol (MCP) to verify code updates against corporate governance specs.",
-            "tech_stack": ["Python", "MCP", "LangChain", "SQLite"],
-            "architecture": "Agent accesses filesystem/db using MCP tool calls -> parses python files -> compares against stored policy trees -> outputs compliance report.",
-            "challenges": "Large contexts causing latency. Solved by pre-filtering code changes using Git diff logs prior to LLM submission."
+            "type": "Compliance Agent",
+            "description": "An AI-powered filesystem and compliance auditing agent utilizing Model Context Protocol (MCP) to verify repository changes against corporate governance standards.",
+            "tech_stack": ["Python", "MCP", "LangChain", "Qdrant", "SQLite"],
+            "architecture": "Developer triggers git hook -> Agent requests git diff files via MCP filesystem tools -> parses AST tree -> compares against compliance guidelines -> logs scores in SQLite.",
+            "challenges": "Large repository scanning was slow. Solved by filtering files using git diff index boundaries prior to LLM submission."
         },
         {
             "id": "tallyko",
             "name": "Tallyko",
-            "type": "System Infrastructure",
-            "description": "High-performance event ledger broker written in Go, resolving race conditions in transactional double-entry systems.",
-            "tech_stack": ["Go", "Redis", "PostgreSQL", "gRPC"],
-            "architecture": "gRPC endpoints accept transaction payloads -> processed through ring buffer -> Redis locks lock wallets -> updates committed to PG.",
-            "challenges": "Ensuring strict transaction ordering. Solved using atomic Redis scripts combined with distributed locks."
+            "type": "Restaurant/Retail SaaS POS",
+            "description": "A multi-tenant point-of-sale restaurant SaaS with Traefik SSL gateways, PostgreSQL Row-Level Security, Redis cache brokers, and MinIO object storage.",
+            "tech_stack": ["Python", "FastAPI", "PostgreSQL", "Redis", "Traefik", "React Native"],
+            "architecture": "Mobile client sends gRPC/REST commands -> Nginx/Traefik forwards requests -> FastAPI verifies tenant session -> executes PostgreSQL queries isolated via RLS.",
+            "challenges": "Mitigating database connection overhead across tenants. Solved using PostgreSQL connection pools combined with isolated schema spaces."
+        },
+        {
+            "id": "agenthive",
+            "name": "AgentHive",
+            "type": "Multi-Agent Orchestrator",
+            "description": "A Docker-first multi-agent platform for deploying, monitoring, and managing collaborative AI agent swarms from one advanced React dashboard, saving token costs using TOON prompt formats.",
+            "tech_stack": ["Next.js", "FastAPI", "PostgreSQL", "pgvector", "Redis", "Celery"],
+            "architecture": "Dashboard coordinates agents -> Celery handles background runs -> postgres with pgvector stores memory embeddings -> context injected via compact TOON prompt rules.",
+            "challenges": "High context window costs during agent collaboration. Solved by replacing large JSON prompt trees with compacted key-value structures."
+        },
+        {
+            "id": "smart-hr-bot",
+            "name": "Smart HR Bot",
+            "type": "AI Recruitment Assistant",
+            "description": "AI recruitment assistant parsing PDF resumes, scheduling candidate calendar slots, simulating chats, and scoring candidates automatically.",
+            "tech_stack": ["FastAPI", "React", "Google Gemini", "LangChain", "SQLite"],
+            "architecture": "Frontend uploads PDF resume -> PDF service extracts text -> Gemini parser creates structured JSON profile -> interview service spawns calendar scheduler & logs ratings.",
+            "challenges": "Automated evaluation bias. Solved by using multi-criteria scoring rubrics enforced in LLM system prompts."
+        },
+        {
+            "id": "youtube-ai-chatbot",
+            "name": "YouTube AI ChatBot",
+            "type": "RAG Chatbot",
+            "description": "RAG-based conversational assistant that ingest transcripts of YouTube videos, indexes them in Chroma DB, and answers user queries with timestamps.",
+            "tech_stack": ["Python", "Chroma DB", "Gemini API", "FastAPI"],
+            "architecture": "Ingest YouTube transcript -> chunk and embed -> store in Chroma -> query-retrieve chunks -> LLM synthesis.",
+            "challenges": "Retrieving precise timestamps. Solved by preserving start offset metadata inside transcript vector embeddings."
+        },
+        {
+            "id": "healthcare-management-system",
+            "name": "Healthcare Management System",
+            "type": "Healthcare Portal",
+            "description": "Portal for scheduling doctor appointments, digital prescriptions registry, and medical records logging.",
+            "tech_stack": ["Python", "Django", "PostgreSQL", "Bootstrap"],
+            "architecture": "Relational DB links patient, doctor, and logs models -> server-side HTML rendering -> secure database queries.",
+            "challenges": "HIPAA compliance and records isolation. Solved by building field-level encryption on sensitive columns."
+        },
+        {
+            "id": "unicorn",
+            "name": "Unicorn Stock Inventory",
+            "type": "Inventory System",
+            "description": "Equipment quote generator and catalog inventory management platform built for Unicorn Equipments.",
+            "tech_stack": ["PHP", "Laravel", "MySQL", "TailwindCSS"],
+            "architecture": "MVC architecture mapping product categories, quotations database, and customer orders.",
+            "challenges": "Heavy catalog updates rendering speed. Solved using Redis query caches."
         }
     ],
     "future_ideas": [
@@ -77,12 +122,6 @@ VISHWAJIT_KB = {
             "status": "Research Phase",
             "timeline": "2026",
             "architecture": "FastAPI middleware injecting Better Auth sessions. Stores tokens directly in Redis cache."
-        },
-        {
-            "name": "Future Agent Framework",
-            "goal": "A lightweight Python agent orchestrator built for low latency micro-tasks with native MCP capabilities.",
-            "status": "Design Phase",
-            "timeline": "2026"
         }
     ]
 }
@@ -111,12 +150,5 @@ def get_kb_context() -> str:
         for pt in exp['points']:
             context += f"  * {pt}\n"
         context += "\n"
-        
-    # Future ideas
-    context += "Future Engineering Roadmap:\n"
-    for idea in VISHWAJIT_KB["future_ideas"]:
-        context += f"- Product: {idea['name']}\n"
-        context += f"  Goal: {idea['goal']}\n"
-        context += f"  Status: {idea['status']} (Target: {idea['timeline']})\n\n"
         
     return context

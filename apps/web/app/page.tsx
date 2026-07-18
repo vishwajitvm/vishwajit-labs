@@ -7,9 +7,7 @@ import Hero from '@/components/Hero';
 import ProjectsList from '@/components/ProjectsList';
 import Timeline from '@/components/Timeline';
 import SkillsGraph from '@/components/SkillsGraph';
-import ArchitectureExplorer from '@/components/ArchitectureExplorer';
 import OSDashboard from '@/components/OSDashboard';
-import Playground from '@/components/Playground';
 import Contact from '@/components/Contact';
 import Terminal from '@/components/Terminal';
 import CommandPalette from '@/components/CommandPalette';
@@ -57,22 +55,16 @@ export default function Home() {
       {/* Monorepo Projects Showcase */}
       <ProjectsList />
 
-      {/* Skills galaxy */}
+      {/* Skills Matrix Explorer */}
       <SkillsGraph />
 
-      {/* Timeline tracker */}
+      {/* Professional Timeline Tracker */}
       <Timeline />
-
-      {/* Architecture explorer */}
-      <ArchitectureExplorer />
-
-      {/* AI Playground */}
-      <Playground />
 
       {/* Github open-source telemetry metrics */}
       <OSDashboard />
 
-      {/* Contact pipeline */}
+      {/* Contact pipeline & Socials */}
       <Contact />
 
       {/* Bottom overlay terminal, cmd palette, and vish ai helper bot */}
@@ -90,12 +82,12 @@ export default function Home() {
       <ChatBot />
 
       {/* Footer */}
-      <footer className="py-12 border-t border-white/5 bg-black/40 text-center font-mono text-[9px] text-zinc-600">
+      <footer className="py-12 border-t border-white/5 bg-black/40 text-center font-mono text-[10px] text-zinc-500">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span>&copy; 2026 VISHWAJIT_LABS. ALL RIGHTS RESERVED.</span>
           <span className="flex gap-4">
             <span>UPTIME: 99.9%</span>
-            <span>KERNEL: v2.0.6-STABLE</span>
+            <span>KERNEL: v2.1.2-STABLE</span>
           </span>
         </div>
       </footer>

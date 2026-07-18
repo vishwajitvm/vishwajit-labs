@@ -37,7 +37,8 @@ export default function CommandPalette({ isOpen, onClose, onTerminalToggle }: Co
     { id: 'proj-policybot', name: 'Open PolicyBot compliance agent details', category: 'Projects', action: () => window.location.href = '/projects/policybot' },
     { id: 'proj-tallyko', name: 'Open Tallyko transaction ledger details', category: 'Projects', action: () => window.location.href = '/projects/tallyko' },
     { id: 'cmd-terminal', name: 'Boot developer terminal shell', category: 'System Tools', action: () => { onClose(); onTerminalToggle(); } },
-    { id: 'cmd-resume', name: 'Download resume package PDF', category: 'System Tools', action: () => { window.open('/assets/resume.pdf', '_blank'); onClose(); } },
+    { id: 'cmd-resume-ai', name: 'Download AI Engineering Resume PDF', category: 'System Tools', action: () => { window.open('/assets/resume-ai.pdf', '_blank'); onClose(); } },
+    { id: 'cmd-resume-fullstack', name: 'Download Backend & Full Stack Resume PDF', category: 'System Tools', action: () => { window.open('/assets/resume-fullstack.pdf', '_blank'); onClose(); } },
     { id: 'sec-skills', name: 'Scroll to skills topology network', category: 'Navigation', action: () => { document.getElementById('skills')?.scrollIntoView({ behavior: 'smooth' }); onClose(); } },
     { id: 'sec-arch', name: 'Scroll to system design flows mapping', category: 'Navigation', action: () => { document.getElementById('architecture')?.scrollIntoView({ behavior: 'smooth' }); onClose(); } },
     { id: 'sec-contact', name: 'Scroll to database contact forms', category: 'Navigation', action: () => { document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' }); onClose(); } }

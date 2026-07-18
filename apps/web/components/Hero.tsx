@@ -25,18 +25,20 @@ export default function Hero({ onTerminalToggle }: HeroProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const handleDownloadResume = async () => {
+  const [showResumeDropdown, setShowResumeDropdown] = useState(false);
+
+  const handleDownloadResume = async (type: 'ai' | 'fullstack') => {
     try {
-      await fetch('/api/analytics/log-download', {
+      await fetch('http://localhost:8000/api/analytics/log-download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file_type: 'resume_pdf', source: 'hero_button' })
+        body: JSON.stringify({ file_type: `resume_${type}`, source: 'hero_button' })
       });
     } catch (e) {
       console.warn('Logging download failed, downloading directly.', e);
     }
-    // direct download path link
-    window.open('/assets/resume.pdf', '_blank');
+    window.open(`/assets/resume-${type}.pdf`, '_blank');
+    setShowResumeDropdown(false);
   };
 
   return (
@@ -51,7 +53,7 @@ export default function Hero({ onTerminalToggle }: HeroProps) {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/30 bg-blue-500/5 text-[10px] font-mono tracking-widest text-blue-400 mb-6 uppercase"
+          className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/5 text-xs font-mono tracking-widest text-blue-400 mb-6 uppercase font-semibold"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
           <span>System status: Online</span>
@@ -62,13 +64,13 @@ export default function Hero({ onTerminalToggle }: HeroProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="text-4xl sm:text-6xl font-sans font-bold tracking-tight text-white mb-6 leading-tight"
+          className="text-5xl sm:text-7xl font-sans font-bold tracking-tight text-white mb-6 leading-tight"
         >
-          Hi, I&apos;m <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Vishwajit</span>.
+          Hi, I&apos;m <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Vishwajit VM</span>.
         </motion.h1>
 
         {/* Dynamic Typing Text */}
-        <div className="min-h-[60px] max-w-2xl text-zinc-400 text-sm sm:text-lg font-mono mb-8 leading-relaxed">
+        <div className="min-h-[60px] max-w-2xl text-zinc-300 text-base sm:text-xl font-mono mb-8 leading-relaxed">
           <span>{typedText}</span>
           <span className="w-2 h-4 bg-blue-500 inline-block ml-1 animate-pulse" />
         </div>
@@ -78,14 +80,14 @@ export default function Hero({ onTerminalToggle }: HeroProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="flex flex-wrap justify-center gap-2 text-[10px] font-mono tracking-wider text-zinc-500 mb-12"
+          className="flex flex-wrap justify-center gap-2.5 text-xs font-mono tracking-wider text-zinc-400 mb-12"
         >
-          <span className="px-2.5 py-1 rounded border border-white/5 bg-white/2">PYTHON</span>
-          <span className="px-2.5 py-1 rounded border border-white/5 bg-white/2">AI</span>
-          <span className="px-2.5 py-1 rounded border border-white/5 bg-white/2">FASTAPI</span>
-          <span className="px-2.5 py-1 rounded border border-white/5 bg-white/2">RAG</span>
-          <span className="px-2.5 py-1 rounded border border-white/5 bg-white/2">OPEN SOURCE</span>
-          <span className="px-2.5 py-1 rounded border border-white/5 bg-white/2">SYSTEM DESIGN</span>
+          <span className="px-3 py-1 rounded border border-white/10 bg-white/5 font-semibold">PYTHON</span>
+          <span className="px-3 py-1 rounded border border-white/10 bg-white/5 font-semibold">AI / LLM</span>
+          <span className="px-3 py-1 rounded border border-white/10 bg-white/5 font-semibold">FASTAPI</span>
+          <span className="px-3 py-1 rounded border border-white/10 bg-white/5 font-semibold">RAG</span>
+          <span className="px-3 py-1 rounded border border-white/10 bg-white/5 font-semibold">OPEN SOURCE</span>
+          <span className="px-3 py-1 rounded border border-white/10 bg-white/5 font-semibold">SYSTEM DESIGN</span>
         </motion.div>
 
         {/* Action Buttons */}
@@ -93,29 +95,47 @@ export default function Hero({ onTerminalToggle }: HeroProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="flex flex-wrap justify-center items-center gap-4 w-full"
+          className="flex flex-wrap justify-center gap-4"
         >
           <a 
-            href="#projects" 
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-[#030303] text-xs font-mono tracking-wider hover:bg-zinc-200 transition-all font-semibold cursor-pointer"
+            href="#projects"
+            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-white text-[#030303] text-sm font-mono tracking-wider hover:bg-zinc-200 transition-all font-bold cursor-pointer"
           >
             <span>EXPLORE_WORK</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4.5 h-4.5" />
           </a>
 
-          <button 
-            onClick={handleDownloadResume}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-white/10 bg-white/5 text-zinc-300 text-xs font-mono tracking-wider hover:bg-white/10 hover:text-white transition-all cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            <span>RESUME</span>
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setShowResumeDropdown(!showResumeDropdown)}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg border border-white/10 bg-white/5 text-zinc-200 text-sm font-mono tracking-wider hover:bg-white/10 hover:text-white transition-all cursor-pointer font-bold"
+            >
+              <Download className="w-4.5 h-4.5" />
+              <span>RESUME</span>
+            </button>
+            {showResumeDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-48 rounded-lg border border-white/10 bg-zinc-950/90 backdrop-blur-md p-1.5 flex flex-col gap-1 z-20 shadow-2xl">
+                <button
+                  onClick={() => handleDownloadResume('ai')}
+                  className="w-full text-left px-3 py-2 rounded text-xs text-zinc-300 hover:bg-white/5 hover:text-blue-400 transition-all font-mono cursor-pointer font-semibold"
+                >
+                  AI_ENGINEER_PDF
+                </button>
+                <button
+                  onClick={() => handleDownloadResume('fullstack')}
+                  className="w-full text-left px-3 py-2 rounded text-xs text-zinc-300 hover:bg-white/5 hover:text-indigo-400 transition-all font-mono cursor-pointer font-semibold"
+                >
+                  FULL_STACK_PDF
+                </button>
+              </div>
+            )}
+          </div>
 
           <button 
             onClick={onTerminalToggle}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-blue-500/20 bg-blue-500/5 text-blue-400 text-xs font-mono tracking-wider hover:bg-blue-500/10 hover:text-blue-300 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-6 py-3 rounded-lg border border-blue-500/20 bg-blue-500/5 text-blue-400 text-sm font-mono tracking-wider hover:bg-blue-500/10 hover:text-blue-300 transition-all cursor-pointer font-bold"
           >
-            <Terminal className="w-4 h-4" />
+            <Terminal className="w-4.5 h-4.5" />
             <span>DEV_SHELL</span>
           </button>
         </motion.div>

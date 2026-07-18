@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Next.js Build Outputs
+.next/
+**/.next/
+out/
+build/
+dist/
+
+# Python Virtual Environments
+venv/
+**/venv/
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Environment Files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Docker Logs
+*.log
+docker/volumes/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE Files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp

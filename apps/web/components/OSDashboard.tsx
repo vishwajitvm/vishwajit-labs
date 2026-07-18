@@ -88,11 +88,11 @@ export default function OSDashboard() {
   return (
     <section id="github" className="py-24 px-6 max-w-7xl mx-auto border-t border-white/5 font-mono">
       <div className="flex flex-col mb-16">
-        <span className="text-[10px] font-mono tracking-widest text-blue-400 uppercase mb-3">05 // OPEN_SOURCE_TELEMETRY</span>
-        <h2 className="text-3xl sm:text-4xl font-sans font-bold tracking-tight text-white">
-          Open Source telemetry Dashboard
+        <span className="text-xs font-mono tracking-widest text-blue-400 uppercase mb-3">04 // OPEN_SOURCE_TELEMETRY</span>
+        <h2 className="text-4xl sm:text-5xl font-sans font-bold tracking-tight text-white">
+          Open Source Telemetry Dashboard
         </h2>
-        <p className="text-zinc-500 text-xs mt-3 max-w-lg">
+        <p className="text-zinc-400 font-mono text-sm mt-4 max-w-xl leading-relaxed">
           Live statistics fetched from the GitHub telemetry API and cached in our Redis system clusters.
         </p>
       </div>
@@ -100,31 +100,31 @@ export default function OSDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Languages & Profile */}
-        <div className="p-8 border border-white/5 bg-white/2 rounded-2xl flex flex-col justify-between">
+        <div className="p-8 border border-white/10 bg-white/2 rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-4 mb-6">
               <img 
                 src={data.profile.avatar_url} 
                 alt="GitHub Avatar" 
-                className="w-12 h-12 rounded-full border border-white/10"
+                className="w-14 h-14 rounded-full border border-white/10"
               />
               <div>
-                <h3 className="text-white text-sm font-bold">@{data.profile.username}</h3>
-                <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Public Repos: {data.profile.public_repos}</span>
+                <h3 className="text-white text-base font-bold">@{data.profile.username}</h3>
+                <span className="text-xs text-zinc-400 uppercase tracking-widest font-semibold block mt-1">Public Repos: {data.profile.public_repos}</span>
               </div>
             </div>
 
-            <div className="h-px bg-white/5 my-6"></div>
+            <div className="h-px bg-white/10 my-6"></div>
 
-            <span className="text-[9px] text-zinc-500 uppercase tracking-wider block mb-4">Core languages usage</span>
-            <div className="flex flex-col gap-3">
+            <span className="text-xs text-zinc-400 uppercase tracking-wider block mb-4 font-semibold">Core languages usage</span>
+            <div className="flex flex-col gap-4">
               {Object.entries(data.languages).map(([lang, pct]) => (
                 <div key={lang}>
-                  <div className="flex justify-between text-[10px] mb-1 font-mono text-zinc-400">
+                  <div className="flex justify-between text-xs mb-1.5 font-mono text-zinc-300">
                     <span>{lang}</span>
                     <span>{pct}%</span>
                   </div>
-                  <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-zinc-950 border border-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-blue-500 rounded-full" 
                       style={{ width: `${pct}%` }}
@@ -135,7 +135,7 @@ export default function OSDashboard() {
             </div>
           </div>
           
-          <div className="mt-8 p-4 rounded-xl border border-white/5 bg-zinc-950/40 text-[9px] text-zinc-500 leading-relaxed">
+          <div className="mt-8 p-4 rounded-xl border border-white/10 bg-zinc-950/40 text-xs text-zinc-400 leading-relaxed font-mono">
             <span className="text-white font-bold block mb-1">CACHE_METRIC:</span>
             Updates dynamically every 6 hours. Rate-limiting safeguards active.
           </div>
@@ -146,33 +146,33 @@ export default function OSDashboard() {
           {data.repositories.map((repo) => (
             <div 
               key={repo.name}
-              className="group p-6 border border-white/5 bg-white/2 rounded-xl flex items-center justify-between hover:border-blue-500/20 hover:bg-blue-500/1 transition-all"
+              className="group p-6 border border-white/10 bg-white/2 rounded-xl flex items-center justify-between hover:border-blue-500/20 hover:bg-blue-500/5 transition-all"
             >
               <div className="flex-1 pr-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[8px] px-2 py-0.5 rounded border border-blue-500/20 bg-blue-500/5 text-blue-400 font-bold uppercase">{repo.language}</span>
-                  <h4 className="text-white text-xs font-bold font-sans group-hover:text-blue-400 transition-colors">{repo.name}</h4>
+                <div className="flex items-center gap-3.5 mb-2.5">
+                  <span className="text-[10px] px-2 py-0.5 rounded border border-blue-500/20 bg-blue-500/5 text-blue-400 font-bold uppercase font-mono">{repo.language}</span>
+                  <h4 className="text-white text-base font-bold font-sans group-hover:text-blue-400 transition-colors">{repo.name}</h4>
                 </div>
-                <p className="text-zinc-500 text-[10px] font-mono leading-relaxed line-clamp-2">{repo.description}</p>
+                <p className="text-zinc-300 text-xs font-mono leading-relaxed line-clamp-2">{repo.description}</p>
               </div>
 
-              <div className="flex items-center gap-6 text-zinc-500 font-mono text-[10px] shrink-0">
+              <div className="flex items-center gap-6 text-zinc-400 font-mono text-xs shrink-0">
                 <div className="flex items-center gap-1.5 hover:text-white transition-colors">
-                  <Star className="w-3.5 h-3.5 text-yellow-500" />
+                  <Star className="w-4 h-4 text-yellow-500" />
                   <span>{repo.stars}</span>
                 </div>
                 <div className="flex items-center gap-1.5 hover:text-white transition-colors">
-                  <GitFork className="w-3.5 h-3.5 text-zinc-500" />
+                  <GitFork className="w-4 h-4 text-zinc-500" />
                   <span>{repo.forks}</span>
                 </div>
                 <a 
                   href={repo.url} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="p-1.5 rounded-md border border-white/10 bg-white/5 text-zinc-400 hover:text-white hover:border-zinc-500 transition-all cursor-pointer"
+                  className="p-2 rounded-md border border-white/10 bg-white/5 text-zinc-300 hover:text-white hover:border-zinc-400 transition-all cursor-pointer"
                   id={`github-repo-${repo.name}`}
                 >
-                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  <ArrowUpRight className="w-4 h-4" />
                 </a>
               </div>
             </div>

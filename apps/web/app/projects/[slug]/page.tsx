@@ -2,8 +2,7 @@
 
 import { use } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Cpu, Database, Server, GitMerge, Settings, Play } from 'lucide-react';
+import { ArrowLeft, Cpu, Database, Server, Settings, Play } from 'lucide-react';
 import { useState } from 'react';
 import { GithubIcon } from '@/components/icons/BrandIcons';
 
@@ -62,7 +61,7 @@ async def tenant_chat(prompt: str, user = Depends(get_current_user)):
     tagline: "MCP Compliance Auditing Agent",
     github: "https://github.com/vishwajitvm/policybot",
     tech: ["Python", "Model Context Protocol", "SQLite", "LangChain"],
-    challenges: "Scanning massive workspace repositories exceeded token budget guidelines. We optimized files scan actions by analyzing Git commit diff files and indexing modified files first, decreasing LLM tokens by 80%.",
+    challenges: "Scanning massive workspace repositories exceeded token budget guidelines. We optimized files scan actions by analyzing Git commit diff logs and indexing modified files first, decreasing LLM tokens by 80%.",
     snippet: `from policybot.mcp import MCPServer
 from policybot.agent import ComplianceAgent
 
@@ -103,6 +102,49 @@ async def read_git_diff() -> str:
       { step: "Commit SQL", desc: "Double-entry records are written to PostgreSQL inside atomic transaction." }
     ],
     schema: "PostgreSQL: wallets (id SERIAL, balance NUMERIC), transactions (id SERIAL, from_wallet INTEGER, to_wallet INTEGER, amount NUMERIC)"
+  },
+  agenthive: {
+    name: "AgentHive Platform",
+    tagline: "Collaborative Multi-Agent Swarms Orchestrator",
+    github: "https://github.com/vishwajitvm/AgentHive",
+    tech: ["Next.js", "FastAPI", "pgvector", "Redis", "Celery"],
+    challenges: "Agent messaging loop chains were exceeding prompt token size rules. Solved by formatting parameters into a compact key-value 'TOON' prompt configuration template instead of large raw JSON strings.",
+    snippet: `from agenthive.prompts import compile_toon_prompt
+
+# Compile lightweight key-value context prompt
+prompt = compile_toon_prompt(
+    agent_id="marketing-bot",
+    context_data={"goals": "leads", "channel": "twitter"}
+)`,
+    flow: [
+      { step: "Swarm Init", desc: "Dashboard boots agent threads." },
+      { step: "Redis Queueing", desc: "Background task queue coordinates agent workflow tasks." },
+      { step: "pgvector Indexing", desc: "Agent retrieves memory chunks from pgvector database." },
+      { step: "Compact Output", desc: "Synthesis returned via space-optimized TOON tokens." }
+    ],
+    schema: "PostgreSQL Tables: agents (id SERIAL, name TEXT), memory_vectors (id SERIAL, agent_id INTEGER, embedding VECTOR(1536))"
+  },
+  'smart-hr-bot': {
+    name: "Smart HR Bot",
+    tagline: "AI Resume Evaluator & Interview Scheduler",
+    github: "https://github.com/vishwajitvm/smart-hr-bot",
+    tech: ["FastAPI", "React", "Google Gemini", "LangChain", "SQLite"],
+    challenges: "Handling heavy PDF resume streams caused thread blockages. We engineered non-blocking PDF text parsers running inside background threads to separate log aggregation steps.",
+    snippet: `from smarthr.parser import extract_pdf_data
+from smarthr.ai import parse_resume_profile
+
+@app.post("/upload")
+async def upload_resume(file: UploadFile):
+    text = await extract_pdf_data(file)
+    profile = await parse_resume_profile(text)
+    return {"status": "parsed", "profile": profile}`,
+    flow: [
+      { step: "PDF Upload", desc: "Candidate uploads PDF profile to FastAPI." },
+      { step: "Gemini Parsing", desc: "System extracts structured user profile using Gemini model." },
+      { step: "Criteria Score", desc: "LangChain chain evaluates resume metrics against criteria rubric." },
+      { step: "Calendar Schedule", desc: "Automatic Google Calendar slot invite dispatched." }
+    ],
+    schema: "SQLite: candidates (id INTEGER, name TEXT, email TEXT, score FLOAT), interviews (id INTEGER, candidate_id INTEGER, scheduled_time TIMESTAMP)"
   }
 };
 
@@ -114,10 +156,10 @@ export default function ProjectPage({ params }: { params: Promise<{ slug: string
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-[#030303] flex items-center justify-center font-mono">
+      <div className="min-h-screen bg-[#030303] flex items-center justify-center font-mono p-6">
         <div className="text-center">
-          <h1 className="text-xl text-red-500 mb-4">Project module not initialized</h1>
-          <Link href="/" className="text-zinc-500 hover:text-white transition-colors border-b border-zinc-500">&lt; RETURN_TO_DASHBOARD</Link>
+          <h1 className="text-2xl text-red-500 mb-6">Project module not initialized</h1>
+          <Link href="/" className="text-zinc-400 hover:text-white transition-colors border-b border-zinc-400 text-sm">&lt; RETURN_TO_DASHBOARD</Link>
         </div>
       </div>
     );
@@ -128,27 +170,27 @@ export default function ProjectPage({ params }: { params: Promise<{ slug: string
       <div className="max-w-5xl mx-auto">
         
         {/* Back Link */}
-        <Link href="/" className="inline-flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-xs mb-12">
+        <Link href="/" className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors text-sm mb-12">
           <ArrowLeft className="w-4 h-4" />
           <span>RETURN_TO_SYSTEM_CONSOLE</span>
         </Link>
 
         {/* Hero Section */}
-        <div className="border border-white/5 bg-white/2 rounded-2xl p-8 sm:p-12 mb-12 relative overflow-hidden">
+        <div className="border border-white/10 bg-white/2 rounded-2xl p-8 sm:p-12 mb-12 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-transparent pointer-events-none" />
           <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-              <span className="text-[10px] text-blue-400 tracking-widest uppercase">Kernel Project Profile</span>
-              <h1 className="text-3xl sm:text-5xl font-sans font-bold text-white tracking-tight mt-2">{project.name}</h1>
-              <p className="text-zinc-400 text-sm mt-3">{project.tagline}</p>
+              <span className="text-xs text-blue-400 tracking-widest uppercase font-semibold">Kernel Project Profile</span>
+              <h1 className="text-4xl sm:text-5xl font-sans font-bold text-white tracking-tight mt-3">{project.name}</h1>
+              <p className="text-zinc-300 text-base mt-4 leading-relaxed">{project.tagline}</p>
             </div>
             <a 
               href={project.github} 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-zinc-300 text-xs hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-white/10 bg-white/5 text-zinc-200 text-sm hover:bg-white/10 hover:text-white transition-all cursor-pointer font-semibold"
             >
-              <GithubIcon className="w-4 h-4" />
+              <GithubIcon className="w-5 h-5" />
               <span>SOURCE_CODE</span>
             </a>
           </div>
@@ -156,56 +198,56 @@ export default function ProjectPage({ params }: { params: Promise<{ slug: string
 
         {/* Grid Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="p-6 border border-white/5 bg-white/2 rounded-xl">
-            <span className="text-[9px] text-zinc-500 tracking-wider">PROJECT_SPECS</span>
-            <div className="flex gap-2 flex-wrap mt-3">
+          <div className="p-6 border border-white/10 bg-white/2 rounded-xl">
+            <span className="text-xs text-zinc-400 tracking-wider font-semibold uppercase block mb-3">PROJECT_SPECS</span>
+            <div className="flex gap-2 flex-wrap">
               {project.tech.map((t: string) => (
-                <span key={t} className="px-2 py-0.5 rounded border border-blue-500/20 bg-blue-500/5 text-[10px] text-blue-400">{t}</span>
+                <span key={t} className="px-2.5 py-1 rounded border border-blue-500/20 bg-blue-500/5 text-xs text-blue-400 font-bold">{t}</span>
               ))}
             </div>
           </div>
           
-          <div className="p-6 border border-white/5 bg-white/2 rounded-xl md:col-span-2">
-            <span className="text-[9px] text-zinc-500 tracking-wider">ENGINEERING_CHALLENGE</span>
-            <p className="text-xs text-zinc-400 mt-3 leading-relaxed">{project.challenges}</p>
+          <div className="p-6 border border-white/10 bg-white/2 rounded-xl md:col-span-2">
+            <span className="text-xs text-zinc-400 tracking-wider font-semibold uppercase block mb-3">ENGINEERING_CHALLENGE</span>
+            <p className="text-sm text-zinc-300 leading-relaxed">{project.challenges}</p>
           </div>
         </div>
 
         {/* Interactive Spec explorer */}
-        <div className="border border-white/5 rounded-xl overflow-hidden bg-white/2 mb-12">
-          <div className="flex border-b border-white/5 bg-zinc-950/50 p-2">
+        <div className="border border-white/10 rounded-xl overflow-hidden bg-white/2 mb-12">
+          <div className="flex border-b border-white/10 bg-zinc-950/50 p-2">
             <button 
               onClick={() => setActiveTab('architecture')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-semibold cursor-pointer ${activeTab === 'architecture' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-xs font-bold cursor-pointer ${activeTab === 'architecture' ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
             >
-              <Server className="w-3.5 h-3.5" />
+              <Server className="w-4 h-4" />
               <span>SYSTEM_FLOW</span>
             </button>
             <button 
               onClick={() => setActiveTab('database')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-semibold cursor-pointer ${activeTab === 'database' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-xs font-bold cursor-pointer ${activeTab === 'database' ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
             >
-              <Database className="w-3.5 h-3.5" />
+              <Database className="w-4 h-4" />
               <span>DATABASE_SCHEMA</span>
             </button>
             <button 
               onClick={() => setActiveTab('code')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-semibold cursor-pointer ${activeTab === 'code' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-xs font-bold cursor-pointer ${activeTab === 'code' ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
             >
-              <Settings className="w-3.5 h-3.5" />
+              <Settings className="w-4 h-4" />
               <span>CODE_SNIPPET</span>
             </button>
           </div>
 
-          <div className="p-6">
+          <div className="p-8">
             {activeTab === 'architecture' && (
               <div className="flex flex-col gap-6">
                 {project.flow.map((item: any, idx: number) => (
                   <div key={idx} className="flex gap-4 items-start">
-                    <div className="w-6 h-6 rounded-full border border-blue-500/30 bg-blue-500/5 flex items-center justify-center text-blue-400 text-xs shrink-0">{idx + 1}</div>
+                    <div className="w-8 h-8 rounded-full border border-blue-500/30 bg-blue-500/5 flex items-center justify-center text-blue-400 text-sm font-bold shrink-0">{idx + 1}</div>
                     <div>
-                      <h4 className="text-white text-xs font-bold">{item.step}</h4>
-                      <p className="text-zinc-500 text-[11px] mt-1 leading-relaxed">{item.desc}</p>
+                      <h4 className="text-white text-sm font-bold">{item.step}</h4>
+                      <p className="text-zinc-400 text-xs mt-2 leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -213,27 +255,27 @@ export default function ProjectPage({ params }: { params: Promise<{ slug: string
             )}
 
             {activeTab === 'database' && (
-              <div className="bg-zinc-950 p-6 rounded-lg border border-white/5 text-[11px] text-zinc-400 leading-relaxed overflow-x-auto whitespace-pre-wrap">
+              <pre className="bg-zinc-950 p-6 rounded-lg border border-white/15 text-xs text-zinc-300 leading-relaxed overflow-x-auto whitespace-pre-wrap font-mono">
                 {project.schema}
-              </div>
+              </pre>
             )}
 
             {activeTab === 'code' && (
-              <div className="bg-zinc-950 p-6 rounded-lg border border-white/5 text-[11px] text-blue-400 leading-relaxed overflow-x-auto whitespace-pre font-mono">
+              <pre className="bg-zinc-950 p-6 rounded-lg border border-white/15 text-xs text-blue-400 leading-relaxed overflow-x-auto whitespace-pre font-mono">
                 {project.snippet}
-              </div>
+              </pre>
             )}
           </div>
         </div>
 
         {/* Video Placeholder */}
-        <div className="border border-white/5 bg-white/2 rounded-xl p-8 text-center flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden">
+        <div className="border border-white/10 bg-white/2 rounded-xl p-8 text-center flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden">
           <div className="absolute inset-0 bg-zinc-950/50 flex flex-col items-center justify-center p-6">
             <div className="w-14 h-14 rounded-full border border-white/15 bg-white/5 flex items-center justify-center mb-4 text-white hover:scale-105 transition-transform cursor-pointer">
               <Play className="w-5 h-5 fill-white ml-0.5" />
             </div>
-            <h4 className="text-white text-sm font-semibold">Video walk-through pending release</h4>
-            <p className="text-zinc-500 text-[10px] mt-2 max-w-xs leading-relaxed">System components and logging streams are mock visualized under standard interactive screens.</p>
+            <h4 className="text-white text-base font-semibold">Video walk-through pending release</h4>
+            <p className="text-zinc-400 text-xs mt-3 max-w-sm leading-relaxed">System components and logging streams are mock visualized under standard interactive screens.</p>
           </div>
         </div>
 

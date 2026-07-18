@@ -38,19 +38,22 @@ export default function Terminal({ isOpen, onClose }: TerminalProps) {
       return;
     }
 
+    const parts = trimmed.split(/\s+/);
+    const mainCommand = parts[0];
+    const subCommand = parts[1];
     let response = '';
 
-    switch (trimmed) {
+    switch (mainCommand) {
       case 'help':
         response = 
           'Available commands:\n' +
           '  whoami     - Displays active developer roles & capabilities\n' +
           '  projects   - Lists primary backend & AI infrastructure models\n' +
-          '  resume     - Initiates PDF resume download action\n' +
+          '  resume     - Downloads developer resume (specify: "resume ai" or "resume fullstack")\n' +
           '  github     - Returns github repository link\n' +
           '  contact    - Explains message submission routes\n' +
           '  clear      - Flushes terminal buffer history\n' +
-          '  sudo hire  - Grants root system developer clearance (try this!)';
+          '  sudo hire  - Grants root system developer clearance';
         break;
       case 'whoami':
         response = 
@@ -60,21 +63,32 @@ export default function Terminal({ isOpen, onClose }: TerminalProps) {
         break;
       case 'projects':
         response = 
-          'TraceNest    - Distributed tracking SDK for async FastAPI logs\n' +
+          'TraceNest    - Distributed tracing SDK for async FastAPI logs\n' +
           'TenantMind   - Multi-tenant vector RAG pipelines manager\n' +
           'PolicyBot    - Code audit agent using Model Context Protocol (MCP)\n' +
           'Tallyko      - High-performance double-entry Go ledger engine\n' +
           'Type "projects" inside browser or click cards for database architectures.';
         break;
       case 'resume':
-        response = 'Initiating resume download sequence...';
-        // Trigger download analytics log
-        fetch('/api/analytics/log-download', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file_type: 'resume_pdf', source: 'terminal' })
-        }).catch(() => {});
-        window.open('/assets/resume.pdf', '_blank');
+        if (subCommand === 'ai') {
+          response = 'Initiating AI Engineering resume download sequence...';
+          fetch('http://localhost:8000/api/analytics/log-download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file_type: 'resume_ai', source: 'terminal' })
+          }).catch(() => {});
+          window.open('/assets/resume-ai.pdf', '_blank');
+        } else if (subCommand === 'fullstack') {
+          response = 'Initiating Full Stack resume download sequence...';
+          fetch('http://localhost:8000/api/analytics/log-download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file_type: 'resume_fullstack', source: 'terminal' })
+          }).catch(() => {});
+          window.open('/assets/resume-fullstack.pdf', '_blank');
+        } else {
+          response = 'Please specify resume version: "resume ai" or "resume fullstack"';
+        }
         break;
       case 'github':
         response = 'Redirecting to: https://github.com/vishwajitvm';
@@ -87,14 +101,18 @@ export default function Terminal({ isOpen, onClose }: TerminalProps) {
         setHistory([]);
         setInput('');
         return;
-      case 'sudo hire':
-        response = 
-          '*** SECURITY ACCESS GRANTED ***\n' +
-          'Redirecting to contact pipeline immediately. Let\'s build platforms together!';
-        setTimeout(() => {
-          document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
-          onClose();
-        }, 1500);
+      case 'sudo':
+        if (subCommand === 'hire') {
+          response = 
+            '*** SECURITY ACCESS GRANTED ***\n' +
+            'Redirecting to contact pipeline immediately. Let\'s build platforms together!';
+          setTimeout(() => {
+            document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+            onClose();
+          }, 1500);
+        } else {
+          response = 'bash: sudo: permission denied';
+        }
         break;
       default:
         response = `bash: command not found: ${trimmed}. Type "help" for a list of valid modules.`;

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: vishwajit-labs-backend
+    env: docker
+    dockerContext: .
+    dockerfilePath: ./docker/Dockerfile.api
+    plan: free
+    region: ohio
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: PORT
+        value: 8000

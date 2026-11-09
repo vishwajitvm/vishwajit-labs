@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Vishwajit Labs API"
     API_V1_STR: str = "/api"
     SECRET_KEY: str = "super-secret-key-change-in-production"
-    # Admin dashboard: requests must send "Authorization: Bearer <ADMIN_TOKEN>". Unset = admin locked.
+    # Admin dashboard token (optional): the hash can live in MongoDB instead, see app/core/security.py.
     ADMIN_TOKEN: Optional[str] = None
     
     # MongoDB

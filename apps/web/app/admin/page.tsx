@@ -43,7 +43,7 @@ async function verify(token: string): Promise<'ok' | 'bad' | 'unset' | 'offline'
 
 const LOGIN_ERRORS = {
   bad: 'That token isn’t right.',
-  unset: 'Admin access isn’t set up yet: add ADMIN_TOKEN on Render, then try again.',
+  unset: 'Admin access isn’t set up yet: add your token’s hash to MongoDB (admin_settings → token_sha256), then try again in a few seconds.',
   offline: 'Can’t reach the backend. It may be waking up (free hosting), so try again in a minute.',
 };
 

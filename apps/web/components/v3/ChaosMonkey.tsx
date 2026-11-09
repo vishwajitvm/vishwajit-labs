@@ -9,7 +9,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { bus, log, metrics, request, send, setHealth, subscribe } from '@/lib/chaos';
-import { isBrawling, makeBandage, makeStars, pets, startBrawl } from '@/lib/pets';
+import { isBrawling, makeBandage, makeStars, pets, startBrawl, tidyPage } from '@/lib/pets';
 import { createShards } from '@/lib/shatter';
 
 const pick = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
@@ -637,6 +637,7 @@ export default function ChaosMonkey() {
       unsub();
       renderer.dispose();
       root.innerHTML = '';
+      tidyPage();
     };
   }, []);
 

@@ -7,7 +7,7 @@
 //   pet:brawl  {x, y, ms}   either → both: fight inside the cloud at (x, y) for ms
 //   pet:fight-now           panel → snake: go pick a fight with the monkey
 import * as THREE from 'three';
-import { log, send } from '@/lib/chaos';
+import { log, send, setHealth } from '@/lib/chaos';
 
 export const pets = {
   monkey: { x: -999, y: -999, visible: true, mode: 'air', hurt: 0, held: false },
@@ -18,6 +18,18 @@ const pick = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
 let brawling = false;
+
+/** Undo anything a pet left half-done on the page (called when the pets are hidden / unmounted). */
+export function tidyPage() {
+  const fx = ['crashed', 'svc-slow', 'limited', 'pushed', 'snake-squeeze', 'snake-crush', 'snake-hug', 'healed'];
+  document.querySelectorAll<HTMLElement>(fx.map((c) => '.' + c).join(',')).forEach((el) => {
+    el.classList.remove(...fx); el.style.translate = ''; el.style.scale = '';
+  });
+  document.querySelectorAll<HTMLElement>('[data-chip]').forEach((c) => { c.style.visibility = ''; });
+  document.querySelectorAll('.chip-carried, .banana, .snake-pop').forEach((n) => n.remove());
+  document.querySelectorAll('[data-svc]').forEach((s) => setHealth(s, 'ok'));
+  pets.monkey.held = false;
+}
 export const isBrawling = () => brawling;
 
 /** Cartoon fight cloud at (x, y). Both pets get 'pet:brawl' and play their side of it. */

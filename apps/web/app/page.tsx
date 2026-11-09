@@ -7,8 +7,7 @@ import { AskAI, MonkeyPanel } from '@/components/v3/Widgets';
 
 // WebGL layers are client-only.
 const ClayHero = dynamic(() => import('@/components/v3/ClayHero'), { ssr: false, loading: () => <section className="hero" id="top" /> });
-const ChaosMonkey = dynamic(() => import('@/components/v3/ChaosMonkey'), { ssr: false });
-const PinkSnake = dynamic(() => import('@/components/v3/PinkSnake'), { ssr: false });
+const Pets = dynamic(() => import('@/components/v3/Pets'), { ssr: false });
 
 export default function Home() {
   useEffect(() => {
@@ -48,8 +47,7 @@ export default function Home() {
       <Footer />
       <AskAI />
       <MonkeyPanel />
-      <ChaosMonkey />
-      <PinkSnake />
+      <Pets />
     </main>
   );
 }

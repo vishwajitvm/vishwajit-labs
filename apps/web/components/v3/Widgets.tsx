@@ -90,8 +90,14 @@ export function MonkeyPanel() {
     const p = loadPrefs();
     setMute(p.mute ?? window.innerWidth < 640);
     setCollapsed(p.collapsed ?? false);
-    if (p.hidden) setMonkeyVisible(false);
+    if (p.hidden === false) setMonkeyVisible(true);   // pets stay off unless this visitor turned them on before
   }, []);
+  const petsOn = useSyncExternalStore(subscribe, () => metrics.monkeyVisible, () => false);
+  const setPets = (on: boolean) => {
+    setMonkeyVisible(on);
+    savePrefs({ ...loadPrefs(), hidden: !on, collapsed: false });
+    setCollapsed(false); setToasts([]);
+  };
   const update = (p: PanelPrefs) => {
     const next = { ...loadPrefs(), mute, collapsed, ...p };
     setMute(!!next.mute); setCollapsed(!!next.collapsed); savePrefs(next);
@@ -107,6 +113,16 @@ export function MonkeyPanel() {
     return () => clearTimeout(timer);
   }, [lines, mute, collapsed]);
 
+  if (!petsOn) {
+    return (
+      <div className="mk">
+        <button className="mk-wake pop" onClick={() => setPets(true)}
+          title="A chaos monkey and a pink snake live here. They break things (on purpose)." aria-label="Let the pets out">
+          <span className="em">🐒🐍</span>Let the pets out
+        </button>
+      </div>
+    );
+  }
   if (collapsed) {
     return (
       <div className="mk">
@@ -132,8 +148,7 @@ export function MonkeyPanel() {
           <span className="lbl-long">{metrics.chaos ? 'chaos on' : 'chill'}</span><span className="lbl-short">{metrics.chaos ? '⚡' : '😴'}</span>
         </button>
         <button onClick={() => update({ mute: !mute })} title={mute ? 'Show pop-up notes' : 'Hide pop-up notes'} aria-label={mute ? 'Show pop-up notes' : 'Hide pop-up notes'}>{mute ? '🔕' : '🔔'}</button>
-        <button onClick={() => { const show = !metrics.monkeyVisible; setMonkeyVisible(show); savePrefs({ ...loadPrefs(), hidden: !show }); force((n) => n + 1); }}
-          title={metrics.monkeyVisible ? 'Hide both pets' : 'Show both pets'} aria-label={metrics.monkeyVisible ? 'Hide both pets' : 'Show both pets'}>{metrics.monkeyVisible ? '🙈' : '👀'}</button>
+        <button onClick={() => setPets(false)} title="Put the pets away" aria-label="Hide both pets">🙈</button>
         <button className="mk-collapse" onClick={() => update({ collapsed: true })} title="Collapse this bar" aria-label="Collapse the pet controls">✕</button>
       </div>
     </div>

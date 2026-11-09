@@ -15,7 +15,7 @@ export const metrics = {
   errors: 0,
   recoveries: 0,
   chaos: true,
-  monkeyVisible: true,
+  monkeyVisible: false,   // pets start hidden; the panel's "Let the pets out" button turns them on
 };
 
 function emit() { listeners.forEach((l) => l()); }

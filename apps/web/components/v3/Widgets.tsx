@@ -72,31 +72,69 @@ export function AskAI() {
 /* ---------- Monkey panel: event toasts + controls ---------- */
 const empty: LogLine[] = [];
 const ICON: Record<string, string> = { ERROR: '💥', WARN: '⚠️', OK: '✅', CHAOS: '🐒', INFO: '•' };
+type PanelPrefs = { mute?: boolean; collapsed?: boolean; hidden?: boolean };
+const PREFS_KEY = 'chaos-panel';
+const loadPrefs = (): PanelPrefs => { try { return JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'); } catch { return {}; } };
+const savePrefs = (p: PanelPrefs) => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* private mode */ } };
+
 export function MonkeyPanel() {
   const lines = useSyncExternalStore(subscribe, getLines, () => empty);
   const [, force] = useState(0);
   const [toasts, setToasts] = useState<LogLine[]>([]);
+  // Pop-up notes can be muted and the whole bar collapsed; both are remembered per visitor.
+  // Phones start muted, since the notes cover a lot of a small screen.
+  const [mute, setMute] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const seen = useRef(0);
+  useEffect(() => {
+    const p = loadPrefs();
+    setMute(p.mute ?? window.innerWidth < 640);
+    setCollapsed(p.collapsed ?? false);
+    if (p.hidden) setMonkeyVisible(false);
+  }, []);
+  const update = (p: PanelPrefs) => {
+    const next = { ...loadPrefs(), mute, collapsed, ...p };
+    setMute(!!next.mute); setCollapsed(!!next.collapsed); savePrefs(next);
+    if (next.mute || next.collapsed) setToasts([]);
+  };
   useEffect(() => {
     const fresh = lines.filter((l) => l.id > seen.current && l.level !== 'INFO' && !/^(GET|POST|PUT|DELETE) \//.test(l.msg));
     if (lines.length) seen.current = lines[lines.length - 1].id;
-    if (!fresh.length) return;
+    if (!fresh.length || mute || collapsed) return;
     setToasts((t) => [...t, ...fresh].slice(-3));
     const ids = fresh.map((f) => f.id);
     const timer = setTimeout(() => setToasts((t) => t.filter((x) => !ids.includes(x.id))), 4200);
     return () => clearTimeout(timer);
-  }, [lines]);
+  }, [lines, mute, collapsed]);
+
+  if (collapsed) {
+    return (
+      <div className="mk">
+        <button className="mk-mini pop" onClick={() => update({ collapsed: false })} title="Show the pet controls" aria-label="Show the pet controls">🐒🐍</button>
+      </div>
+    );
+  }
   return (
     <div className="mk">
       <div className="toasts">
-        {toasts.map((t) => <div key={t.id} className={`toast ${t.level}`}><span>{ICON[t.level]}</span>{t.msg}</div>)}
+        {toasts.map((t) => (
+          <button key={t.id} className={`toast ${t.level}`} title="Tap to dismiss" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}>
+            <span>{ICON[t.level]}</span>{t.msg}
+          </button>
+        ))}
       </div>
       <div className="mk-bar">
-        <span className="mk-title">🐒 Chaos Monkey</span>
-        <button onClick={() => send('feed')} title="Drop a banana">🍌</button>
-        <button onClick={() => send('chaos-now')} title="Let it break something now">💥</button>
-        <button className={metrics.chaos ? 'on' : ''} onClick={() => { setChaos(!metrics.chaos); force((n) => n + 1); }} title="Chaos on / off">{metrics.chaos ? 'chaos on' : 'chill'}</button>
-        <button onClick={() => { setMonkeyVisible(!metrics.monkeyVisible); force((n) => n + 1); }} title="Show / hide the monkey">{metrics.monkeyVisible ? '🙈' : '👀'}</button>
+        <span className="mk-title">🐒 Chaos crew 🐍</span>
+        <button className="mk-desk" onClick={() => send('feed')} title="Drop a banana">🍌</button>
+        <button className="mk-desk" onClick={() => send('chaos-now')} title="Let the monkey break something now">💥</button>
+        <button onClick={() => send('pet:fight-now')} title="Make the snake and the monkey fight">🥊</button>
+        <button className={metrics.chaos ? 'on' : ''} onClick={() => { setChaos(!metrics.chaos); force((n) => n + 1); }} title="Chaos on / off">
+          <span className="lbl-long">{metrics.chaos ? 'chaos on' : 'chill'}</span><span className="lbl-short">{metrics.chaos ? '⚡' : '😴'}</span>
+        </button>
+        <button onClick={() => update({ mute: !mute })} title={mute ? 'Show pop-up notes' : 'Hide pop-up notes'} aria-label={mute ? 'Show pop-up notes' : 'Hide pop-up notes'}>{mute ? '🔕' : '🔔'}</button>
+        <button onClick={() => { const show = !metrics.monkeyVisible; setMonkeyVisible(show); savePrefs({ ...loadPrefs(), hidden: !show }); force((n) => n + 1); }}
+          title={metrics.monkeyVisible ? 'Hide both pets' : 'Show both pets'} aria-label={metrics.monkeyVisible ? 'Hide both pets' : 'Show both pets'}>{metrics.monkeyVisible ? '🙈' : '👀'}</button>
+        <button className="mk-collapse" onClick={() => update({ collapsed: true })} title="Collapse this bar" aria-label="Collapse the pet controls">✕</button>
       </div>
     </div>
   );

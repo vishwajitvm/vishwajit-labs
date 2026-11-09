@@ -9,6 +9,8 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { bus, log, metrics, request, send, setHealth, subscribe } from '@/lib/chaos';
+import { isBrawling, makeBandage, makeStars, pets, startBrawl } from '@/lib/pets';
+import { createShards } from '@/lib/shatter';
 
 const pick = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -83,57 +85,21 @@ export default function ChaosMonkey() {
     tail.add(new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 40, 3.2, 8), furDark)); body.add(tail);
     monkey.scale.setScalar(SC);
 
-    // ------------------------------------------------------------ shards (for crashed cards)
-    type Shard = { mesh: THREE.Mesh; v: THREE.Vector3; w: THREE.Vector3; home: THREE.Vector3; homeQ: THREE.Quaternion; from?: THREE.Vector3; fromQ?: THREE.Quaternion };
-    const shards: { list: Shard[]; el: HTMLElement; mode: 'fly' | 'heal'; t: number }[] = [];
-    const shatter = (el: HTMLElement, sx: number, sy: number) => {
-      const r = el.getBoundingClientRect();
-      const cs = getComputedStyle(el);
-      const base = new THREE.Color(cs.backgroundColor && !cs.backgroundColor.includes('0, 0, 0, 0') ? cs.backgroundColor.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, 'rgb($1,$2,$3)') : '#FFFDF8');
-      const cols = clamp(Math.round(r.width / 70), 3, 9), rows = clamp(Math.round(r.height / 70), 2, 7);
-      const pts: THREE.Vector2[][] = [];
-      for (let i = 0; i <= cols; i++) {
-        pts[i] = [];
-        for (let j = 0; j <= rows; j++) {
-          const edge = i === 0 || j === 0 || i === cols || j === rows;
-          pts[i][j] = new THREE.Vector2(r.left + (i / cols) * r.width + (edge ? 0 : rand(-14, 14)), r.top + (j / rows) * r.height + (edge ? 0 : rand(-14, 14)));
-        }
-      }
-      const list: Shard[] = [];
-      const tri = (a: THREE.Vector2, b: THREE.Vector2, c: THREE.Vector2) => {
-        const cx = (a.x + b.x + c.x) / 3, cy = (a.y + b.y + c.y) / 3;
-        const g = new THREE.BufferGeometry();
-        g.setAttribute('position', new THREE.Float32BufferAttribute([a.x - cx, -(a.y - cy), 0, b.x - cx, -(b.y - cy), 0, c.x - cx, -(c.y - cy), 0], 3));
-        g.computeVertexNormals();
-        const tint = base.clone().lerp(new THREE.Color(pick(['#FF5B1F', '#B9A6FF', '#9FE8C8', '#FFE07A', '#9FD0FF'])), 0.35);
-        const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: tint, side: THREE.DoubleSide, roughness: 0.2, metalness: 0.6, emissive: tint, emissiveIntensity: 0.25, transparent: true, opacity: 0.95 }));
-        mesh.position.set(cx, -cy, 50);
-        scene.add(mesh);
-        const away = new THREE.Vector3(cx - sx, -(cy - sy), 0).normalize();
-        list.push({ mesh, v: new THREE.Vector3(away.x * rand(150, 520), away.y * rand(150, 420) + rand(250, 620), rand(-200, 200)),
-          w: new THREE.Vector3(rand(-6, 6), rand(-6, 6), rand(-6, 6)), home: mesh.position.clone(), homeQ: mesh.quaternion.clone() });
-      };
-      for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
-        if (Math.random() < 0.5) { tri(pts[i][j], pts[i + 1][j], pts[i + 1][j + 1]); tri(pts[i][j], pts[i + 1][j + 1], pts[i][j + 1]); }
-        else { tri(pts[i][j], pts[i + 1][j], pts[i][j + 1]); tri(pts[i + 1][j], pts[i + 1][j + 1], pts[i][j + 1]); }
-      }
-      el.classList.add('crashed');
-      const group = { list, el, mode: 'fly' as const, t: 0 };
-      shards.push(group);
-      return group;
-    };
-    const heal = (g: (typeof shards)[number]) => {
-      (g as { mode: string }).mode = 'heal'; g.t = 0;
-      g.list.forEach((s) => { s.from = s.mesh.position.clone(); s.fromQ = s.mesh.quaternion.clone(); });
-    };
+    // shards for crashed cards (shared with the snake)
+    const fx = createShards(scene, () => H);
+
+    // injuries after a fight with the pink snake
+    const bandage = makeBandage(); bandage.position.set(13, 17, 22); bandage.rotation.z = -0.5; bandage.visible = false; head.add(bandage);
+    const blackEye = new THREE.Mesh(new THREE.TorusGeometry(7.6, 1.7, 8, 24), M('#7c3aed')); blackEye.position.set(-8.5, 4, 27); blackEye.visible = false; head.add(blackEye);
+    const dizzyStars = makeStars(3, 5.5); dizzyStars.position.set(0, 36, 0); dizzyStars.visible = false; head.add(dizzyStars);
 
     // ------------------------------------------------------------ state
     type Anchor = { el: Element; dx: number; offY: number } | null;
     const S = {
-      x: W * 0.7, y: -160, vx: 0, vy: 0, mode: 'air' as 'air' | 'anchored' | 'jump' | 'drag' | 'floor',
+      x: W * 0.7, y: -160, vx: 0, vy: 0, mode: 'air' as 'air' | 'anchored' | 'jump' | 'drag' | 'floor' | 'hold',
       anchor: null as Anchor, face: 1, sq: 0, sqv: 0, behind: false, flip: 0,
       pose: 'idle' as 'idle' | 'walk' | 'push' | 'charge' | 'carry' | 'tap' | 'sleep' | 'flail' | 'happy' | 'cover' | 'peek' | 'wave' | 'scratch' | 'look',
-      yaw: null as number | null, spin: false,
+      yaw: null as number | null, spin: false, hurt: 0, dizzy: 0,
       jump: null as null | { fx: number; fy: number; tx: () => [number, number]; h: number; T: number; t: number; land: Anchor },
     };
     let carried: HTMLElement | null = null;
@@ -192,7 +158,7 @@ export default function ChaosMonkey() {
       S.jump = { fx: S.x, fy: S.y, tx: o.target, h: 90, T: 0.5, t: 0, land: null }; S.mode = 'jump';
       while (S.jump) yield;
       const started = performance.now();
-      const g = shatter(el, S.x, S.y);
+      const g = fx.shatter(el, S.x, S.y);
       setHealth(svcOf(el), 'down');
       log('ERROR', `${svcName(el)}: pod crashed — readiness probe failing`);
       say(pick(['Oops. 🙈', 'Production go brrr', 'It was like that when I got here']), 1600);
@@ -201,7 +167,7 @@ export default function ChaosMonkey() {
       setHealth(svcOf(el), 'restarting');
       log('WARN', `${svcName(el)}: restarting pod (attempt 1/3, backoff 200ms)`);
       yield* wait(900);
-      heal(g);
+      fx.heal(g);
       yield* wait(800);
       setHealth(svcOf(el), 'ok');
       log('OK', `${svcName(el)}: recovered in ${((performance.now() - started) / 1000).toFixed(1)}s — zero data lost`);
@@ -363,12 +329,51 @@ export default function ChaosMonkey() {
     }
     function* doLook(): Gen { S.pose = 'look'; say(pick(['🔍 scanning for bugs…', 'Where did that request go?', 'Looking for prod…']), 1700); yield* wait(2100); S.pose = 'idle'; }
     function* doScratch(): Gen { S.pose = 'scratch'; say(pick(['Hmm 🤔', 'Why is this working?', 'Must be DNS.', 'Who wrote this? Oh, me.']), 1700); yield* wait(1900); S.pose = 'idle'; }
+    // ------------------------------------------------------------ the pink snake
+    function* held(): Gen {
+      S.jump = null; S.pose = 'flail'; S.yaw = 0; setBehind(false);
+      if (S.mode === 'air' || S.mode === 'jump') S.mode = 'hold';
+      say(pick(['LET GO!! 😫', 'Help! A noodle!', 'snake.exe is hugging me', 'Not the hug!! 🙀']), 1800);
+      let t = 0, second = false;
+      while (pets.monkey.held && t < 9000) { t += yield; if (!second && t > 2300) { second = true; say(pick(['I can’t breathe 😵', 'Personal space!!', 'Kernel panic!!']), 1400); } }
+      if (S.mode === 'hold') { S.mode = 'air'; S.vy = -200; }
+      S.pose = 'idle'; S.yaw = null;
+    }
+    function* doFlee(fromX: number): Gen {
+      S.yaw = 0; say(pick(['AAAH, a snake! 🐍', 'Nope nope nope', 'Not today, noodle!', 'Run, monkey, run! 🏃']), 1400);
+      for (let k = 0; k < 3; k++) {
+        const far = [...document.querySelectorAll('[data-perch], [data-break]')].filter((e) => { if (!visible(e) || e.classList.contains('crashed')) return false; const r = e.getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - fromX) > 220; });
+        if (far.length) yield* hopOn(pick(far), undefined, 0, 160); else yield* toFloor(fromX < W / 2 ? rand(W * 0.6, W - 60) : rand(60, W * 0.4));
+        yield* wait(rand(150, 400));
+        fromX = pets.snake.x;
+      }
+      S.yaw = null;
+    }
+    function* doBrawl(cx: number, cy: number, ms: number): Gen {
+      setBehind(false); S.jump = null; S.anchor = null; S.mode = 'hold'; S.pose = 'flail'; S.yaw = 0;
+      let t = 0;
+      while (t < ms) { t += yield; S.x = cx + rand(-26, 26); S.y = cy + 50 * SC + rand(-18, 18); }
+      S.mode = 'air'; S.vx = (Math.random() < 0.5 ? -1 : 1) * rand(420, 700); S.vy = -rand(700, 950);
+      S.hurt = 25000; S.dizzy = 4500; S.yaw = null;
+      say(pick(['Ow ow ow 🤕', 'You should see the other guy 🥊', 'Filing an incident report 📝', 'That noodle bites!! 😭']), 1900);
+    }
+    function* doPickFight(): Gen {
+      if (!pets.snake.visible || isBrawling()) return;
+      S.yaw = 0; say(pick(['That noodle stole my banana! 😤', 'Square up, snake 🥊', 'Monkey see, monkey fight!']), 1600);
+      yield* wait(700);
+      yield* jumpTo(() => [pets.snake.x, pets.snake.y], null, 200);
+      S.mode = 'hold'; S.x = pets.snake.x; S.y = pets.snake.y;
+      startBrawl(S.x, S.y - 30 * SC);
+      yield* wait(100);
+    }
     const quirk = (): Gen => pick([doTurnAround, doCover, doDance, doWave, doLook, doScratch])();
 
     let gen: Gen | null = null;
     let queued: Gen | null = null;
     const nextTask = (): Gen => {
       const r = Math.random();
+      if (S.hurt > 0 && Math.random() < 0.4) return pick([doSleep, doPerch])();
+      if (metrics.chaos && pets.snake.visible && S.hurt <= 0 && pets.snake.hurt <= 0 && !isBrawling() && Math.random() < 0.05) return doPickFight();
       if (Math.random() < 0.3) return quirk();
       if (metrics.chaos) {
         if (r < 0.18) return expKill();
@@ -439,11 +444,19 @@ export default function ChaosMonkey() {
     const onChaosNow = () => interrupt(pick([expKill, expLatency, expSteal, expFlood, expStomp])());
     bus.addEventListener('feed', onFeed);
     bus.addEventListener('chaos-now', onChaosNow);
-    const unsub = subscribe(() => {
+    const onFlee = (e: Event) => interrupt(doFlee(((e as CustomEvent).detail as { x?: number })?.x ?? W / 2));
+    const onHold = () => interrupt(held());
+    const onBrawl = (e: Event) => { const d = (e as CustomEvent).detail as { x: number; y: number; ms: number }; interrupt(doBrawl(d.x, d.y, d.ms)); };
+    bus.addEventListener('pet:flee', onFlee);
+    bus.addEventListener('pet:hold', onHold);
+    bus.addEventListener('pet:brawl', onBrawl);
+    const applyVisible = () => {
       const show = metrics.monkeyVisible;
       cv.style.display = show ? '' : 'none'; hit.style.display = show ? '' : 'none';
       if (!show) bubble.classList.remove('show');
-    });
+    };
+    const unsub = subscribe(applyVisible);
+    applyVisible();
 
     const onResize = () => {
       W = window.innerWidth; H = window.innerHeight;
@@ -454,7 +467,7 @@ export default function ChaosMonkey() {
 
     // ------------------------------------------------------------ main loop
     let last = performance.now(), raf = 0, idleT = 1200, blinkT = 2500, t = 0;
-    log('CHAOS', 'chaos-monkey deployed to production 🐒 (grab it, throw it, or feed it from the panel)');
+    log('INFO', 'chaos-monkey deployed to production 🐒 (grab it, throw it, or feed it from the panel)');
     const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
       const dtMs = Math.min(50, now - last); last = now;
@@ -474,7 +487,7 @@ export default function ChaosMonkey() {
 
       // scared of fast cursors
       const hx = S.x, hy = S.y - 80 * SC;
-      if (!dragging && mouseSpeed > 2600 && Math.hypot(mouseX - hx, mouseY - hy) < 130 && S.mode !== 'jump' && S.mode !== 'air') {
+      if (!dragging && mouseSpeed > 2600 && Math.hypot(mouseX - hx, mouseY - hy) < 130 && S.mode !== 'jump' && S.mode !== 'air' && S.mode !== 'hold') {
         gen = null; S.vx = (hx > mouseX ? 1 : -1) * 520; S.vy = -760; S.mode = 'air'; S.anchor = null; say('AAAH! 😱', 900);
       }
 
@@ -585,26 +598,14 @@ export default function ChaosMonkey() {
       // carried chip follows the hands
       if (carried) { carried.style.left = `${S.x - carried.offsetWidth / 2}px`; carried.style.top = `${S.y - 150 * SC}px`; carried.style.transform = `rotate(${Math.sin(t * 6) * 8}deg)`; }
 
-      // shards
-      for (let gi = shards.length - 1; gi >= 0; gi--) {
-        const g = shards[gi]; g.t += dt;
-        if (g.mode === 'fly') {
-          g.list.forEach((s) => {
-            s.v.y -= 1400 * dt; s.mesh.position.addScaledVector(s.v, dt);
-            if (s.mesh.position.y < -H + 8) { s.mesh.position.y = -H + 8; s.v.y = Math.abs(s.v.y) * 0.3; s.v.x *= 0.6; }
-            s.mesh.rotation.x += s.w.x * dt; s.mesh.rotation.y += s.w.y * dt; s.mesh.rotation.z += s.w.z * dt;
-          });
-        } else {
-          const k = Math.min(1, g.t / 0.75);
-          const e = 1 - Math.pow(1 - k, 3);
-          g.list.forEach((s) => { s.mesh.position.lerpVectors(s.from!, s.home, e); s.mesh.quaternion.slerpQuaternions(s.fromQ!, s.homeQ, e); });
-          if (k >= 1) {
-            g.list.forEach((s) => { scene.remove(s.mesh); s.mesh.geometry.dispose(); (s.mesh.material as THREE.Material).dispose(); });
-            g.el.classList.remove('crashed'); g.el.classList.add('healed'); setTimeout(() => g.el.classList.remove('healed'), 900);
-            shards.splice(gi, 1);
-          }
-        }
-      }
+      fx.update(dt);
+
+      // share position with the snake; injuries
+      pets.monkey.x = S.x; pets.monkey.y = S.y; pets.monkey.mode = S.mode; pets.monkey.visible = metrics.monkeyVisible; pets.monkey.hurt = S.hurt;
+      if (S.hurt > 0) { S.hurt -= dtMs; if (S.hurt <= 0) { log('OK', 'chaos-monkey: patched up 🩹 → healthy again'); say('Good as new! 💪', 1300); } }
+      if (S.dizzy > 0) S.dizzy -= dtMs;
+      bandage.visible = blackEye.visible = S.hurt > 0;
+      dizzyStars.visible = S.dizzy > 0; (dizzyStars.userData.ring as THREE.Group).rotation.y += dt * 5;
 
       // overlay DOM: hit box + speech bubble
       Object.assign(hit.style, { left: `${S.x - 44 * SC}px`, top: `${S.y - 112 * SC}px`, width: `${88 * SC}px`, height: `${112 * SC}px` });
@@ -619,6 +620,9 @@ export default function ChaosMonkey() {
       window.removeEventListener('resize', onResize);
       bus.removeEventListener('feed', onFeed);
       bus.removeEventListener('chaos-now', onChaosNow);
+      bus.removeEventListener('pet:flee', onFlee);
+      bus.removeEventListener('pet:hold', onHold);
+      bus.removeEventListener('pet:brawl', onBrawl);
       unsub();
       renderer.dispose();
       root.innerHTML = '';

@@ -443,3 +443,33 @@ html, body { overflow-x: clip; max-width: 100%; }
   .dd { position: static; }
   .dd-menu { left: 0; right: 0; min-width: 0; }
 }
+
+/* ---------- pet panel: dismissable notes, mute, collapse ---------- */
+.toast { pointer-events: auto; cursor: pointer; text-align: left; color: var(--ink); }
+.toast:hover { filter: brightness(.97); }
+.mk-mini { padding: 9px 13px; border-radius: 999px; border: 2px solid var(--ink); background: var(--paper); box-shadow: 4px 4px 0 var(--ink); font-size: 18px; cursor: pointer; transition: transform .15s; }
+.mk-mini:hover { transform: translateY(-2px) rotate(-3deg); }
+.mk-bar .mk-collapse { border-color: transparent; background: none; padding: 6px 8px; }
+.lbl-short { display: none; }
+@media (max-width: 640px) { .mk-desk, .lbl-long { display: none; } .lbl-short { display: inline; } }
+
+/* ---------- pink snake ---------- */
+.crashed { opacity: 0 !important; pointer-events: none; }
+.snake-hit { position: fixed; z-index: 62; cursor: grab; border-radius: 50%; touch-action: none; }
+.snake-hit.grabbing { cursor: grabbing; }
+.monkey-bubble.snake-bubble { background: #ffe1ee; }
+.snake-squeeze { transition: scale .22s cubic-bezier(.3, 1.6, .5, 1); }
+.snake-crush { animation: crush-shake .07s linear infinite; }
+@keyframes crush-shake { 0% { translate: -1.5px 0; } 50% { translate: 1.5px 1px; } 100% { translate: -1px -1px; } }
+.snake-hug { transition: scale .3s cubic-bezier(.3, 1.6, .5, 1); }
+.snake-pop { position: fixed; z-index: 66; pointer-events: none; font-size: 22px; animation: snake-pop 1.15s ease-out forwards; }
+@keyframes snake-pop { from { transform: translate(-50%, -50%) scale(.4); opacity: 1; } to { transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% - 80px)) scale(1.25); opacity: 0; } }
+
+/* monkey vs snake fight cloud */
+.pet-brawl { position: fixed; z-index: 66; width: 0; height: 0; pointer-events: none; animation: brawl-in .2s cubic-bezier(.3, 1.6, .5, 1); transition: transform .45s, opacity .45s; }
+.pet-brawl b { position: absolute; border-radius: 50%; background: var(--paper); border: 3px solid var(--ink); animation: puff .32s ease-in-out infinite alternate; }
+.pet-brawl i { position: absolute; left: 0; top: 0; font-style: normal; font-size: 26px; translate: -50% -50%; animation: brawl-fly .7s ease-out infinite; }
+.pet-brawl.poof { transform: scale(1.5); opacity: 0; }
+@keyframes brawl-in { from { transform: scale(.2); } }
+@keyframes puff { from { transform: scale(.88) rotate(-6deg); } to { transform: scale(1.08) rotate(6deg); } }
+@keyframes brawl-fly { from { transform: translate(0, 0) scale(.5); opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(30deg); opacity: 0; } }

@@ -17,7 +17,8 @@ export const metadata: Metadata = {
   authors: [{ name: "Vishwajit VM" }],
   openGraph: {
     title: "Vishwajit VM — Backend & AI Engineer",
-    description: "APIs, databases, queues and AI agents that keep working when things go wrong.",
+    // LinkedIn wants 100+ characters here.
+    description: "APIs, databases, queues and AI agents that keep working when things go wrong. Python, FastAPI, Node.js and NestJS. Open to freelance and contract work.",
     url: "https://vishwajit-labs-web.vercel.app",
     siteName: "Vishwajit Labs",
     locale: "en_US",

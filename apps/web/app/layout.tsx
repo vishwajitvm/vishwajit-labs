@@ -9,6 +9,8 @@ const inter = Inter({ variable: "--font-body", subsets: ["latin"], display: "swa
 const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
+  // Absolute base for the generated share image (app/opengraph-image.tsx) — link previews need a full URL.
+  metadataBase: new URL("https://vishwajit-labs-web.vercel.app"),
   title: "Vishwajit VM — Backend & AI Engineer",
   description: "I build backends that don't break: APIs, databases, queues and AI agents. 5+ years, New Delhi, open to freelance and contract work.",
   keywords: ["Backend Engineer", "AI Engineer", "Python", "FastAPI", "NestJS", "PostgreSQL", "RAG", "MCP", "LangGraph", "Freelance"],

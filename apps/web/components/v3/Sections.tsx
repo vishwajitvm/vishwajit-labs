@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type MouseEvent as RME } from 'react';
-import { STACK_ICONS, STACK_LAYERS, STACK_TIPS } from '@/data/stackIcons';
-import { WORK, type Work } from '@/data/work';
+import { STACK_LAYERS, STACK_TIPS } from '@/data/stackIcons';
+import { Icon } from '@/components/v3/Icon';
+import ProjectDetail from '@/components/v3/ProjectDetail';
+export { Icon };
+import { WORK, flatStack, type Work } from '@/data/work';
 import { log, request, send } from '@/lib/chaos';
 
 const API = () => process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
@@ -16,13 +19,6 @@ function tilt(e: RME<HTMLElement>) {
   el.style.setProperty('--gx', `${(x + 0.5) * 100}%`); el.style.setProperty('--gy', `${(y + 0.5) * 100}%`);
 }
 function untilt(e: RME<HTMLElement>) { e.currentTarget.style.setProperty('--rx', '0deg'); e.currentTarget.style.setProperty('--ry', '0deg'); }
-
-export function Icon({ name, size = 18 }: { name: string; size?: number }) {
-  const ic = STACK_ICONS[name] || STACK_ICONS[name.replace(/\.js$/, '')];
-  if (!ic) return null;
-  if (ic.svg) return <svg viewBox={ic.vb} width={size} height={size} className="ico" dangerouslySetInnerHTML={{ __html: ic.svg }} />;
-  return <span className="ico emoji" style={{ fontSize: size - 2 }}>{ic.emoji}</span>;
-}
 
 /* ---------- nav ---------- */
 export function Nav() {
@@ -100,35 +96,17 @@ function Modal({ w, onClose, onNav }: { w: Work; onClose: () => void; onNav: (d:
   }, [onClose, onNav]);
   return (
     <div className="modal-bg" onClick={onClose} role="dialog" aria-modal="true" aria-label={w.name}>
-      <div className="modal" style={{ ['--c' as string]: w.color }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal wide" style={{ ['--c' as string]: w.color }} onClick={(e) => e.stopPropagation()}>
         <button className="m-x" onClick={onClose} aria-label="Close">✕</button>
-        <div className="m-head">
-          <span className="m-emoji">{w.emoji}</span>
-          <div>
-            <p className="m-kind">{w.kind === 'product' ? 'My product' : `Built at ${w.org}`}{w.when ? ` · ${w.when}` : ''}</p>
-            <h3>{w.name}</h3>
-            <p className="m-tag">{w.tagline}</p>
-          </div>
-        </div>
-        {w.stats && <div className="m-stats">{w.stats.map((s) => <span key={s}>{s}</span>)}</div>}
-        <p className="m-sum">{w.summary}</p>
-        <h4>What I built</h4>
-        <ul className="m-list">{w.bullets.map((b) => <li key={b}>{b}</li>)}</ul>
-        <h4>Built with</h4>
-        <div className="m-stack">{w.stack.map((s) => <span key={s}><Icon name={s} size={16} />{s}</span>)}</div>
-        <div className="m-links">
-          {w.links.live && <a className="btn btn-orange pop" href={w.links.live} target="_blank" rel="noopener">Visit live site ↗</a>}
-          {w.links.code && <a className="btn btn-ink pop" href={w.links.code} target="_blank" rel="noopener">View code ↗</a>}
-          {w.links.pypi && <a className="btn btn-paper pop" href={w.links.pypi} target="_blank" rel="noopener">On PyPI ↗</a>}
-          <Link className="btn btn-paper pop" href={`/projects/${w.id}`}>Shareable page →</Link>
-        </div>
+        <ProjectDetail key={w.id} w={w} />
+        <div className="m-share"><Link className="btn btn-paper pop" href={`/projects/${w.id}`}>Open as a full page →</Link></div>
         <div className="m-nav"><button onClick={() => onNav(-1)}>← Previous</button><button onClick={() => onNav(1)}>Next →</button></div>
       </div>
     </div>
   );
 }
 export function WorkGrid() {
-  const [filter, setFilter] = useState<'all' | 'product' | 'client'>('all');
+  const [filter, setFilter] = useState<'all' | 'product' | 'client' | 'freelance'>('all');
   const [open, setOpen] = useState<number | null>(null);
   const list = useMemo(() => WORK.filter((w) => filter === 'all' || w.kind === filter), [filter]);
   const openAt = (i: number) => { setOpen(i); request('GET', `/projects/${list[i].id}`); };
@@ -137,7 +115,7 @@ export function WorkGrid() {
       <p className="eyebrow">Selected work</p>
       <h2 className="h2" data-perch>Things I’ve built <span className="scribble">&amp; shipped</span>.</h2>
       <div className="filters">
-        {([['all', `Everything · ${WORK.length}`], ['product', 'My products'], ['client', 'Client & company work']] as const).map(([k, l]) => (
+        {([['all', `Everything · ${WORK.length}`], ['product', 'My products'], ['freelance', 'Freelance'], ['client', 'Client & company work']] as const).map(([k, l]) => (
           <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>{l}</button>
         ))}
       </div>
@@ -145,11 +123,11 @@ export function WorkGrid() {
         {list.map((w, i) => (
           <button key={w.id} className={`card ${w.featured ? 'feat' : ''}`} style={{ ['--c' as string]: w.color }}
             data-svc={w.id} data-break data-hide data-push data-perch onMouseMove={tilt} onMouseLeave={untilt} onClick={() => openAt(i)}>
-            <span className="c-top"><span className="c-emoji">{w.emoji}</span><span className="c-kind">{w.kind === 'product' ? 'my product' : w.org}</span><span className="health" data-health>healthy</span></span>
+            <span className="c-top"><span className="c-emoji">{w.emoji}</span><span className="c-kind">{w.kind === 'product' ? 'my product' : w.kind === 'freelance' ? 'freelance' : w.org}</span><span className="health" data-health>healthy</span></span>
             <span className="c-name">{w.name}</span>
             <span className="c-tag">{w.tagline}</span>
             {w.stats && <span className="c-stats">{w.stats.map((s) => <i key={s}>{s}</i>)}</span>}
-            <span className="c-foot"><span className="c-stack">{w.stack.slice(0, 4).map((s) => <Icon key={s} name={s} size={18} />)}</span><b>Open ↗</b></span>
+            <span className="c-foot"><span className="c-stack">{flatStack(w).slice(0, 5).map((s) => <Icon key={s} name={s} size={18} />)}</span><b>Open ↗</b></span>
           </button>
         ))}
       </div>
@@ -169,14 +147,16 @@ const JOBS = [
   { years: '2022', org: 'WebReinvent', role: 'Software Developer', where: 'New Delhi', color: '#9FD0FF', badge: 'open source',
     points: ['Features, APIs and fixes for VaahCMS, an open-source Laravel + Vue CMS'] },
   { years: '2021 – 2022', org: 'BluBrandz Technologies', role: 'Full Stack Developer', where: 'New Delhi', color: '#FFB59A', badge: 'first job',
-    points: ['Angle Fertility (hospital management), Aragma (events) and Unicorn Equipments (machinery tracking)'] },
+    points: ['Angle Fertility (hospital management) and Unicorn Equipments (machinery tracking)'] },
+  { years: '2021 – 2024', org: 'Freelance', role: 'Full-stack developer', where: 'Remote', color: '#FF8FB1', badge: 'freelance',
+    points: ['Concretewale — e-commerce & content platform (concretewale.com)', 'Telas Santo Antônio — fabric catalogue website on October CMS', 'Gyanastu — learning management system', 'Aragma — house-party & event management'] },
 ];
 export function Journey() {
   const [open, setOpen] = useState(0);
   return (
     <section id="timeline" className="sec">
       <p className="eyebrow">Journey</p>
-      <h2 className="h2" data-perch>Four teams. <span className="scribble">Zero boring weeks</span>.</h2>
+      <h2 className="h2" data-perch>Four teams, many clients. <span className="scribble">Zero boring weeks</span>.</h2>
       <div className="jobs">
         {JOBS.map((j, i) => (
           <div key={j.org} className={`job ${open === i ? 'open' : ''}`} style={{ ['--c' as string]: j.color }} data-break data-hide data-perch

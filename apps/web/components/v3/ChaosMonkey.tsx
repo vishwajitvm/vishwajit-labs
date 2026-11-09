@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { bus, log, metrics, request, setHealth, subscribe } from '@/lib/chaos';
+import { bus, log, metrics, request, send, setHealth, subscribe } from '@/lib/chaos';
 
 const pick = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -20,7 +20,7 @@ export default function ChaosMonkey() {
   useEffect(() => {
     const root = host.current!;
     let W = window.innerWidth, H = window.innerHeight;
-    const SC = W < 640 ? 0.72 : 1;
+    const SC = W < 640 ? 0.6 : 0.82;
 
     // ------------------------------------------------------------ renderer / overlay
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -89,7 +89,7 @@ export default function ChaosMonkey() {
     const shatter = (el: HTMLElement, sx: number, sy: number) => {
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
-      const base = new THREE.Color(cs.backgroundColor && !cs.backgroundColor.includes('0, 0, 0, 0') ? cs.backgroundColor : '#111827');
+      const base = new THREE.Color(cs.backgroundColor && !cs.backgroundColor.includes('0, 0, 0, 0') ? cs.backgroundColor.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, 'rgb($1,$2,$3)') : '#FFFDF8');
       const cols = clamp(Math.round(r.width / 70), 3, 9), rows = clamp(Math.round(r.height / 70), 2, 7);
       const pts: THREE.Vector2[][] = [];
       for (let i = 0; i <= cols; i++) {
@@ -105,7 +105,7 @@ export default function ChaosMonkey() {
         const g = new THREE.BufferGeometry();
         g.setAttribute('position', new THREE.Float32BufferAttribute([a.x - cx, -(a.y - cy), 0, b.x - cx, -(b.y - cy), 0, c.x - cx, -(c.y - cy), 0], 3));
         g.computeVertexNormals();
-        const tint = base.clone().lerp(new THREE.Color(pick(['#6366f1', '#22d3ee', '#a78bfa', '#334155'])), 0.35);
+        const tint = base.clone().lerp(new THREE.Color(pick(['#FF5B1F', '#B9A6FF', '#9FE8C8', '#FFE07A', '#9FD0FF'])), 0.35);
         const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: tint, side: THREE.DoubleSide, roughness: 0.2, metalness: 0.6, emissive: tint, emissiveIntensity: 0.25, transparent: true, opacity: 0.95 }));
         mesh.position.set(cx, -cy, 50);
         scene.add(mesh);
@@ -132,7 +132,8 @@ export default function ChaosMonkey() {
     const S = {
       x: W * 0.7, y: -160, vx: 0, vy: 0, mode: 'air' as 'air' | 'anchored' | 'jump' | 'drag' | 'floor',
       anchor: null as Anchor, face: 1, sq: 0, sqv: 0, behind: false, flip: 0,
-      pose: 'idle' as 'idle' | 'walk' | 'push' | 'charge' | 'carry' | 'tap' | 'sleep' | 'flail' | 'happy',
+      pose: 'idle' as 'idle' | 'walk' | 'push' | 'charge' | 'carry' | 'tap' | 'sleep' | 'flail' | 'happy' | 'cover' | 'peek' | 'wave' | 'scratch' | 'look',
+      yaw: null as number | null, spin: false,
       jump: null as null | { fx: number; fy: number; tx: () => [number, number]; h: number; T: number; t: number; land: Anchor },
     };
     let carried: HTMLElement | null = null;
@@ -249,12 +250,32 @@ export default function ChaosMonkey() {
       const btn = choose('[data-flood]'); if (!btn) return;
       yield* hopOn(btn, btn.getBoundingClientRect().width / 2);
       S.pose = 'tap'; say('click click click click', 1600);
+      btn.classList.add('limited'); setTimeout(() => btn.classList.remove('limited'), 2800);
       log('CHAOS', 'chaos-monkey: flooding the API gateway (60 req/s)');
       bus.dispatchEvent(new CustomEvent('flood'));
       for (let k = 0; k < 6; k++) { request('GET', '/projects', k < 3 ? 200 : 429); yield* wait(170); }
       log('WARN', 'gateway: rate limiter tripped — 429 Too Many Requests for chaos-monkey 🙈');
       S.pose = 'idle'; say('429?! Rude.', 1500);
       yield* wait(900);
+    }
+
+    function* expStomp(): Gen {
+      const hero = document.querySelector('[data-hero]');
+      if (!hero || !visible(hero)) return;
+      const r = hero.getBoundingClientRect();
+      const dx = rand(r.width * 0.15, r.width * 0.85);
+      yield* hopOn(hero, dx, Math.min(r.height - 40, H - r.top - 40), 220);
+      S.pose = 'charge'; say(pick(['Cannonball!! 💣', 'Let’s rearrange prod', 'Earthquake drill!']), 1400);
+      yield* wait(700);
+      S.pose = 'idle';
+      const o = onEl(hero, dx, Math.min(r.height - 40, H - r.top - 40));
+      S.jump = { fx: S.x, fy: S.y, tx: o.target, h: 230, T: 0.7, t: 0, land: o.anchor }; S.mode = 'jump';
+      while (S.jump) yield;
+      send('stomp', { x: S.x, y: S.y });
+      S.sqv -= 10;
+      log('CHAOS', 'chaos-monkey: stomped the service pile — 18 services rebalanced');
+      say('Load balanced 😎', 1500);
+      yield* wait(1200);
     }
 
     function* doPush(): Gen {
@@ -316,12 +337,42 @@ export default function ChaosMonkey() {
 
     function* flip(): Gen { S.flip = 0.0001; S.vy = -720; S.mode = 'air'; S.anchor = null; S.sqv += 4; yield* wait(400); }
 
+    function* doTurnAround(): Gen {
+      S.yaw = Math.PI; say(pick(['Not talking to you 😤', '*sulks in 3D*', 'Facing the wall till it compiles', 'Admiring my tail 🐒']), 1900);
+      yield* wait(rand(1800, 3200));
+      S.yaw = null; say(pick(['…okay fine 🙃', 'I’m back!', 'Did you miss me?']), 1100);
+      yield* wait(500);
+    }
+    function* doCover(): Gen {
+      S.yaw = 0; S.pose = 'cover'; say(pick(['🙈 I didn’t see those logs', 'Don’t look at prod!', '🙈🙈🙈', 'If I can’t see the bug, it can’t see me']), 1800);
+      yield* wait(1500);
+      S.pose = 'peek'; say('👀 peeking…', 1000); yield* wait(950);
+      S.pose = 'cover'; yield* wait(700);
+      S.pose = 'idle'; S.yaw = null;
+    }
+    function* doDance(): Gen {
+      say(pick(['🎶 deploying on a Friday 🎶', '💃 all tests passed!', '🕺 zero downtime dance', '🎵 it works on my machine 🎵']), 2400);
+      S.spin = true; S.pose = 'happy';
+      for (let k = 0; k < 6; k++) { S.sqv += 6; yield* wait(360); }
+      S.spin = false; S.pose = 'idle'; S.yaw = null;
+    }
+    function* doWave(): Gen {
+      S.face = mouseX > S.x ? 1 : -1; S.yaw = 0; S.pose = 'wave';
+      say(pick(['Hi there! 👋', 'Hello, recruiter 👋', 'Psst… hire my human', 'Hey you with the cursor!']), 1900);
+      yield* wait(1900); S.pose = 'idle'; S.yaw = null;
+    }
+    function* doLook(): Gen { S.pose = 'look'; say(pick(['🔍 scanning for bugs…', 'Where did that request go?', 'Looking for prod…']), 1700); yield* wait(2100); S.pose = 'idle'; }
+    function* doScratch(): Gen { S.pose = 'scratch'; say(pick(['Hmm 🤔', 'Why is this working?', 'Must be DNS.', 'Who wrote this? Oh, me.']), 1700); yield* wait(1900); S.pose = 'idle'; }
+    const quirk = (): Gen => pick([doTurnAround, doCover, doDance, doWave, doLook, doScratch])();
+
     let gen: Gen | null = null;
     let queued: Gen | null = null;
     const nextTask = (): Gen => {
       const r = Math.random();
+      if (Math.random() < 0.3) return quirk();
       if (metrics.chaos) {
         if (r < 0.18) return expKill();
+        if (r < 0.24 && document.querySelector('[data-hero]') && visible(document.querySelector('[data-hero]')!)) return expStomp();
         if (r < 0.31) return expLatency();
         if (r < 0.44) return expSteal();
         if (r < 0.51) return expFlood();
@@ -346,7 +397,7 @@ export default function ChaosMonkey() {
       dragging = true; moved = 0; samples.length = 0;
       grabDX = e.clientX - S.x; grabDY = e.clientY - S.y;
       if (carried) { carried.remove(); carried = null; document.querySelectorAll<HTMLElement>('[data-chip]').forEach((c) => { c.style.visibility = ''; }); }
-      gen = null; S.jump = null; S.anchor = null; S.mode = 'drag'; S.pose = 'flail'; setBehind(false);
+      gen = null; S.jump = null; S.anchor = null; S.mode = 'drag'; S.pose = 'flail'; setBehind(false); S.yaw = null; S.spin = false;
       hit.classList.add('grabbing');
     });
     hit.addEventListener('pointermove', (e) => {
@@ -385,7 +436,7 @@ export default function ChaosMonkey() {
       interrupt(doBanana(b));
       log('INFO', 'POST /monkey/feed 201 — banana dispatched 🍌');
     };
-    const onChaosNow = () => interrupt(pick([expKill, expLatency, expSteal, expFlood])());
+    const onChaosNow = () => interrupt(pick([expKill, expLatency, expSteal, expFlood, expStomp])());
     bus.addEventListener('feed', onFeed);
     bus.addEventListener('chaos-now', onChaosNow);
     const unsub = subscribe(() => {
@@ -413,7 +464,7 @@ export default function ChaosMonkey() {
 
       // tasks
       if (!dragging && metrics.monkeyVisible) {
-        if (queued) { gen = queued; queued = null; S.pose = 'idle'; gen.next(0); }
+        if (queued) { gen = queued; queued = null; S.pose = 'idle'; S.yaw = null; S.spin = false; gen.next(0); }
         if (!gen && (S.mode === 'anchored' || S.mode === 'floor')) {
           idleT -= dtMs;
           if (idleT <= 0) { gen = nextTask(); gen.next(0); idleT = rand(700, 2200); }
@@ -494,11 +545,21 @@ export default function ChaosMonkey() {
       if (S.pose === 'carry' || S.pose === 'happy') { aL = 2.7 + swing * 0.15; aR = -2.7 - swing * 0.15; }
       if (S.pose === 'tap') { aL = -S.face * (1.2 + Math.abs(Math.sin(t * 28)) * 0.8); aR = aL; }
       if (S.pose === 'flail') { aL = 2 + Math.sin(t * 25) * 0.9; aR = -2 + Math.cos(t * 25) * 0.9; }
+      let xL = 0, xR = 0, syL = 1, syR = 1;
+      if (S.pose === 'cover' || S.pose === 'peek') { aL = 0.42; aR = -0.42; xL = xR = -2.5; syL = syR = 1.45; if (S.pose === 'peek') { xR = -1.3; aR = -0.2; syR = 1.1; } }
+      if (S.pose === 'wave') { aR = -2.6 + Math.sin(t * 14) * 0.45; aL = 0.3; }
+      if (S.pose === 'scratch') { aR = -2.75; xR = -0.7; syR = 1.25; aL = 0.3; }
       armL.rotation.z += (aL - armL.rotation.z) * 0.3; armR.rotation.z += (aR - armR.rotation.z) * 0.3;
+      armL.rotation.x += (xL - armL.rotation.x) * 0.3; armR.rotation.x += (xR - armR.rotation.x) * 0.3;
+      armL.scale.y += (syL - armL.scale.y) * 0.3; armR.scale.y += (syR - armR.scale.y) * 0.3;
+      head.rotation.y = S.pose === 'look' ? Math.sin(t * 2.4) * 0.7 : head.rotation.y * 0.85;
+      head.rotation.x = S.pose === 'cover' ? 0.18 : S.pose === 'scratch' ? -0.12 : head.rotation.x * 0.85;
+      if (S.pose === 'scratch') armR.position.y = 52 + Math.sin(t * 22) * 2; else armR.position.y = 52;
       tail.rotation.z = Math.sin(t * 3.2) * 0.35;
 
       // facing, flip, charge shake, behind tint
-      monkey.rotation.y += ((S.face * 0.5) - monkey.rotation.y) * 0.15;
+      if (S.spin) monkey.rotation.y += dt * 9;
+      else { const yawT = S.yaw ?? S.face * 0.5; let dy = yawT - monkey.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); monkey.rotation.y += dy * 0.12; }
       if (S.flip) { S.flip += dt * 11; monkey.rotation.z = -S.face * S.flip; if (S.flip >= Math.PI * 2) { S.flip = 0; monkey.rotation.z = 0; } }
       else monkey.rotation.z = S.mode === 'drag' ? clamp((samples.length > 1 ? samples[samples.length - 1].x - samples[0].x : 0) * -0.004, -0.6, 0.6) : 0;
       const shake = S.pose === 'charge' ? rand(-3, 3) : 0;

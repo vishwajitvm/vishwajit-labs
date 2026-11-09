@@ -13,8 +13,9 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: Optional[str] = "redis://localhost:6379/0"
     
-    # Gemini AI
+    # Gemini AI ("Ask my AI"). Without a key the chat answers from the knowledge base offline.
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-flash-latest"
     
     # GitHub
     GITHUB_TOKEN: Optional[str] = None
@@ -27,7 +28,10 @@ class Settings(BaseSettings):
     
     # Resend Email
     RESEND_API_KEY: Optional[str] = None
-    CONTACT_EMAIL_TO: str = "vishwajit@vishwajitvm.dev"
+    CONTACT_EMAIL_TO: str = "vishwajitmall50@gmail.com"
+    # Resend's shared sender only delivers to the Resend account's own address;
+    # set this to an address on a domain verified in Resend to email anyone else.
+    CONTACT_EMAIL_FROM: str = "Vishwajit Labs <onboarding@resend.dev>"
     
     # Sentry DSN
     SENTRY_DSN: Optional[str] = None

@@ -25,16 +25,20 @@ export function AskAI() {
       const res = await fetch(`${api}/api/chat/stream`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, history: next.slice(0, -1) }) });
       if (!res.ok || !res.body) throw new Error('down');
       const reader = res.body.getReader(); const dec = new TextDecoder();
-      let acc = '';
+      let acc = '', buf = '', finished = false;
       setMsgs((m) => [...m, { role: 'model', content: '' }]);
-      for (;;) {
+      // Server-Sent Events: events end with a blank line; each payload is a JSON string,
+      // so spaces and line breaks inside the answer survive. Events can span network chunks.
+      while (!finished) {
         const { value, done } = await reader.read();
         if (done) break;
-        for (const line of dec.decode(value, { stream: true }).split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          const d = line.slice(6).trim();
-          if (d === '[DONE]') break;
-          acc += d;
+        buf += dec.decode(value, { stream: true });
+        const events = buf.split('\n\n'); buf = events.pop() ?? '';
+        for (const ev of events) {
+          const data = ev.split('\n').filter((l) => l.startsWith('data: ')).map((l) => l.slice(6)).join('\n');
+          if (!data) continue;
+          if (data === '[DONE]') { finished = true; break; }
+          try { acc += JSON.parse(data); } catch { acc += data; }
           setMsgs((m) => { const u = [...m]; u[u.length - 1] = { role: 'model', content: acc }; return u; });
         }
       }

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from typing import Optional
-from app.core.db import get_database
+from app.core.db import get_database, safe_insert
 
 router = APIRouter()
 
@@ -17,10 +17,8 @@ class DownloadLog(BaseModel):
     source: Optional[str] = None  # e.g., "hero_button", "terminal"
 
 @router.post("/log-visit")
-async def log_visit(log: VisitorLog, request: Request, db = Depends(get_database)):
-    if db is None:
-        return {"status": "success", "info": "Local database skipped"}
-        
+async def log_visit(log: VisitorLog, request: Request):
+    # Best effort: analytics must never error for a visitor.
     client_ip = request.headers.get("x-forwarded-for") or request.client.host
     user_agent = request.headers.get("user-agent") or "unknown"
     
@@ -34,14 +32,11 @@ async def log_visit(log: VisitorLog, request: Request, db = Depends(get_database
         "visited_at": datetime.utcnow()
     }
     
-    await db["visitors"].insert_one(visit_entry)
-    return {"status": "success"}
+    stored = await safe_insert("visitors", visit_entry)
+    return {"status": "success", "stored": bool(stored)}
 
 @router.post("/log-download")
-async def log_download(log: DownloadLog, request: Request, db = Depends(get_database)):
-    if db is None:
-        return {"status": "success", "info": "Local database skipped"}
-        
+async def log_download(log: DownloadLog, request: Request):
     client_ip = request.headers.get("x-forwarded-for") or request.client.host
     
     download_entry = {
@@ -51,8 +46,8 @@ async def log_download(log: DownloadLog, request: Request, db = Depends(get_data
         "downloaded_at": datetime.utcnow()
     }
     
-    await db["downloads"].insert_one(download_entry)
-    return {"status": "success"}
+    stored = await safe_insert("downloads", download_entry)
+    return {"status": "success", "stored": bool(stored)}
 
 @router.get("/dashboard-stats")
 async def get_dashboard_stats(db = Depends(get_database)):

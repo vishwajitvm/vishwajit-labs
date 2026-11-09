@@ -1,124 +1,135 @@
-from fastapi import APIRouter, HTTPException, Depends
+import asyncio
+import json
+import logging
+from typing import AsyncIterator, List, Optional
+
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-import asyncio
-import os
-from typing import List, Optional
-import google.generativeai as genai
-from app.services.knowledge_base import get_kb_context, VISHWAJIT_KB
+
 from app.core.config import settings
+from app.services.knowledge_base import find_project, get_kb_context, load_kb
 
 router = APIRouter()
+logger = logging.getLogger("uvicorn")
+
+MAX_MESSAGE = 2000   # characters per message
+MAX_HISTORY = 12     # earlier turns sent to the model
+
 
 class ChatRequest(BaseModel):
     message: str
     history: Optional[List[dict]] = None
 
-SYSTEM_INSTRUCTION = f"""
-You are VISH AI, a specialized AI assistant embedded in the engineering portfolio of Vishwajit (Vishwajit Labs).
-Your purpose is to answer questions about Vishwajit's experience, technical skills, projects, future ideas, and system architecture.
 
-Adopt a professional, engineering-focused tone. Speak clearly, concisely, and with technical depth. Recruiters and engineering managers are speaking to you.
-Do not make up information. Only use the facts provided in the knowledge base below.
-If asked about topics outside of Vishwajit or software engineering, politely redirect the conversation back to Vishwajit's portfolio.
+SYSTEM_INSTRUCTION = f"""You are the AI assistant on the portfolio website of Vishwajit VM, a backend & AI engineer.
+Visitors are recruiters, hiring managers, founders and engineers. Answer questions about his experience,
+projects, skills and availability.
 
-Knowledge Base:
+Rules:
+- Use only the facts in the knowledge base below. Never invent employers, numbers, dates, clients or links.
+- If something isn't covered (salary, education, personal life, anything else), say you don't have that detail
+  and suggest emailing him at vishwajitmall50@gmail.com.
+- Talk about him in the third person ("Vishwajit built…"). Be warm, direct and specific.
+- Keep answers short: 2–5 sentences, or a few short lines for lists. Plain text only: no markdown,
+  no asterisks, no headings, no tables.
+- When it helps, point to the project's link or suggest opening the project card on the page.
+- For hiring or freelance questions, mention he is open to freelance, contract and full-time work and how to reach him.
+- If asked about something unrelated to Vishwajit or software, politely steer back.
+
+KNOWLEDGE BASE
 {get_kb_context()}
 """
 
-def generate_mock_stream(message: str):
-    # Simple rule-based mock matching the knowledge base if Gemini Key is absent
-    message_lc = message.lower()
-    response_text = ""
-    
-    if "tracenest" in message_lc:
-        response_text = (
-            "TraceNest is a distributed tracing SDK and dashboard for FastAPI & Microservices. "
-            "It intercepts requests, generates unique trace IDs, and pushes telemetry events "
-            "asynchronously to ClickHouse. The main engineering challenge was handling heavy traffic "
-            "without clogging the event loops, which Vishwajit solved with a memory-buffered background drain worker."
+
+def sse(text: str) -> str:
+    """One Server-Sent Event. JSON-encoding keeps spaces and newlines intact."""
+    return f"data: {json.dumps(text, ensure_ascii=False)}\n\n"
+
+
+DONE = "data: [DONE]\n\n"
+
+
+def offline_answer(message: str) -> str:
+    """Answer from the knowledge base without a model (no GEMINI_API_KEY, or the model is down)."""
+    kb = load_kb()
+    p = kb["profile"]
+    pr = find_project(message)
+    if pr:
+        link = next(iter((pr.get("links") or {}).values()), None)
+        return pr["overview"] + (f" More: {link}" if link else " Open its card in the projects section for the full case study.")
+    m = message.lower()
+    if any(w in m for w in ("hire", "freelance", "contract", "available", "availability", "rate", "job")):
+        return f"{p['availability']} {p['contact']}"
+    if any(w in m for w in ("stack", "skill", "tech", "tools", "language")):
+        top = [f"{s['area']}: {', '.join(s['tools'][:6])}" for s in kb["skills"]]
+        return "Vishwajit's toolbox, by area. " + " · ".join(top)
+    if any(w in m for w in ("resume", "résumé", "cv")):
+        return p["resumes"]
+    if any(w in m for w in ("experience", "work", "job", "company", "career", "where")):
+        jobs = "; ".join(f"{j['role']} at {j['org']} ({j['years']})" for j in kb["jobs"])
+        return f"{p['summary']} Career so far: {jobs}."
+    names = ", ".join(x["name"] for x in kb["projects"][:6])
+    return (f"{p['name']} is a {p['title']} in New Delhi with {p['experience']} of experience. {p['summary']} "
+            f"Ask me about projects like {names}, his stack, or his availability.")
+
+
+async def stream_offline(message: str) -> AsyncIterator[str]:
+    words = offline_answer(message).split(" ")
+    for i, word in enumerate(words):
+        yield sse(word + (" " if i < len(words) - 1 else ""))
+        await asyncio.sleep(0.025)
+    yield DONE
+
+
+def build_contents(req: ChatRequest) -> list:
+    contents = []
+    for item in (req.history or [])[-MAX_HISTORY:]:
+        text = str(item.get("content", ""))[:MAX_MESSAGE].strip()
+        if not text:
+            continue
+        role = "user" if item.get("role") == "user" else "model"
+        contents.append({"role": role, "parts": [{"text": text}]})
+    # The conversation must start with a user turn: drop a leading greeting from the assistant.
+    while contents and contents[0]["role"] == "model":
+        contents.pop(0)
+    contents.append({"role": "user", "parts": [{"text": req.message[:MAX_MESSAGE]}]})
+    return contents
+
+
+async def stream_gemini(req: ChatRequest) -> AsyncIterator[str]:
+    from google import genai
+    from google.genai import types
+
+    sent_any = False
+    try:
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        stream = await client.aio.models.generate_content_stream(
+            model=settings.GEMINI_MODEL,
+            contents=build_contents(req),
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_INSTRUCTION,
+                temperature=0.4,
+                max_output_tokens=600,
+            ),
         )
-    elif "tenantmind" in message_lc or "rag" in message_lc:
-        response_text = (
-            "TenantMind AI is a multi-tenant RAG platform. It uses LangChain, Redis, Pinecone, and Gemini. "
-            "It isolates customer records via JWT-scoped namespace partitions in Pinecone and MongoDB. "
-            "This setup ensures no tenant's search vectors leak into another tenant's query context."
-        )
-    elif "policybot" in message_lc or "agent" in message_lc:
-        response_text = (
-            "PolicyBot is a compliance-checking AI Agent utilizing the Model Context Protocol (MCP). "
-            "It accesses file structures directly to review code changes against predefined compliance standards, "
-            "utilizing Git diff pre-filtering to optimize token usage."
-        )
-    elif "tallyko" in message_lc or "golang" in message_lc:
-        response_text = (
-            "Tallyko is a transaction ledger broker built in Go using gRPC. "
-            "It implements thread-safe balance operations, resolved via Redis distributed locks, "
-            "preventing double-spend concurrency hazards."
-        )
-    elif "skills" in message_lc or "tech stack" in message_lc:
-        response_text = (
-            "Vishwajit's primary stack includes Python, FastAPI, Go, Docker, MongoDB Atlas, Redis, "
-            "LangChain, Vector Databases, and MCP (Model Context Protocol). On the frontend, he uses "
-            "Next.js 15, React 19, TypeScript, Framer Motion, and Three.js."
-        )
-    elif "resume" in message_lc:
-        response_text = (
-            "You can download Vishwajit's resume using the 'Download Resume' button on the homepage, "
-            "or type 'resume' inside the system terminal interface to fetch it directly."
-        )
-    else:
-        response_text = (
-            "Hi, I'm VISH AI. I can tell you about Vishwajit's background. "
-            "He is a Python Backend and AI Engineer specializing in RAG, Agents, and Platform systems. "
-            "Try asking me about his projects like 'TraceNest', 'TenantMind AI', 'PolicyBot', or his stack!"
-        )
-        
-    async def event_generator():
-        # Yield the response token by token to simulate streaming
-        words = response_text.split(" ")
-        for i, word in enumerate(words):
-            yield f"data: {word + (' ' if i < len(words) - 1 else '')}\n\n"
-            await asyncio.sleep(0.04)
-        yield "data: [DONE]\n\n"
-        
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+        async for chunk in stream:
+            if chunk.text:
+                sent_any = True
+                yield sse(chunk.text)
+    except Exception as e:  # never show raw provider errors to visitors
+        logger.error(f"Gemini chat failed ({settings.GEMINI_MODEL}): {e}")
+        if not sent_any:
+            async for part in stream_offline(req.message):
+                yield part
+            return
+    yield DONE
+
 
 @router.post("/stream")
 async def chat_stream(request: ChatRequest):
-    if not settings.GEMINI_API_KEY:
-        return generate_mock_stream(request.message)
-        
-    try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=SYSTEM_INSTRUCTION
-        )
-        
-        # Build history if provided
-        contents = []
-        if request.history:
-            for item in request.history:
-                role = "user" if item.get("role") == "user" else "model"
-                contents.append({"role": role, "parts": [item.get("content", "")]})
-        
-        contents.append({"role": "user", "parts": [request.message]})
-        
-        async def event_generator():
-            try:
-                response = model.generate_content(contents, stream=True)
-                for chunk in response:
-                    if chunk.text:
-                        # Format as SSE
-                        yield f"data: {chunk.text}\n\n"
-                        await asyncio.sleep(0.01)
-                yield "data: [DONE]\n\n"
-            except Exception as e:
-                yield f"data: Error: {str(e)}\n\n"
-                yield "data: [DONE]\n\n"
-                
-        return StreamingResponse(event_generator(), media_type="text/event-stream")
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Gemini API failure: {str(e)}")
+    headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    if not request.message.strip():
+        return StreamingResponse(stream_offline("hello"), media_type="text/event-stream", headers=headers)
+    source = stream_gemini(request) if settings.GEMINI_API_KEY else stream_offline(request.message)
+    return StreamingResponse(source, media_type="text/event-stream", headers=headers)

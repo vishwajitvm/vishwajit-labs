@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import google.generativeai as genai
+import logging
 from app.core.config import settings
+
+logger = logging.getLogger("uvicorn")
 
 router = APIRouter()
 
@@ -69,9 +71,9 @@ async def run_playground_task(request: PlaygroundRequest):
         return {"result": result}
         
     try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        
+        from google import genai
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+
         prompt = ""
         if request.task == "rag":
             # Simple RAG simulation
@@ -100,8 +102,11 @@ async def run_playground_task(request: PlaygroundRequest):
         else:
             raise HTTPException(status_code=400, detail="Invalid playground task type")
             
-        response = model.generate_content(prompt)
+        response = await client.aio.models.generate_content(model=settings.GEMINI_MODEL, contents=prompt)
         return {"result": response.text}
-        
+
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI playground execution failed: {str(e)}")
+        logger.error(f"Playground AI call failed: {e}")
+        return {"result": run_local_fallback(request.task, request.content, request.query)}

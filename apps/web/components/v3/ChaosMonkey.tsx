@@ -441,7 +441,18 @@ export default function ChaosMonkey() {
       interrupt(doBanana(b));
       log('INFO', 'POST /monkey/feed 201 — banana dispatched 🍌');
     };
-    const onChaosNow = () => interrupt(pick([expKill, expLatency, expSteal, expFlood, expStomp])());
+    // 💥 only picks an experiment whose target is on screen, so pressing it always does something.
+    const onChaosNow = () => {
+      const options: (() => Gen)[] = [];
+      if (choose('[data-break]')) options.push(expKill, expKill);
+      if (choose('[data-svc] [data-break], [data-svc][data-break]')) options.push(expLatency);
+      if (choose('[data-chip]')) options.push(expSteal);
+      if (choose('[data-flood]')) options.push(expFlood);
+      const hero = document.querySelector('[data-hero]');
+      if (hero && visible(hero)) options.push(expStomp);
+      if (!options.length) { say('Nothing to break here… scroll somewhere juicier 😈', 1800); return; }
+      interrupt(pick(options)());
+    };
     bus.addEventListener('feed', onFeed);
     bus.addEventListener('chaos-now', onChaosNow);
     const onFlee = (e: Event) => interrupt(doFlee(((e as CustomEvent).detail as { x?: number })?.x ?? W / 2));

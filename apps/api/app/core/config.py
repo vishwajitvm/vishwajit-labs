@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Vishwajit Labs API"
     API_V1_STR: str = "/api"
     SECRET_KEY: str = "super-secret-key-change-in-production"
+    # Admin dashboard: requests must send "Authorization: Bearer <ADMIN_TOKEN>". Unset = admin locked.
+    ADMIN_TOKEN: Optional[str] = None
     
     # MongoDB
     MONGODB_URI: str = "mongodb://localhost:27017/vishwajit_labs"

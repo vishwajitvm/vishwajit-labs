@@ -6,6 +6,8 @@ import logging
 
 from app.core.config import settings
 from app.core.db import connect_to_mongo, close_mongo_connection, connect_to_redis, close_redis_connection
+from app.core.security import require_admin
+from fastapi import Depends
 from app.api.endpoints import contact, github, chat, playground, analytics
 
 # Initialize Logging
@@ -63,11 +65,10 @@ api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(playground.router, prefix="/playground", tags=["playground"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 
-# Basic Auth Mock router for simple login verify
-@api_router.post("/auth/verify")
+# Admin sign-in check: succeeds only with "Authorization: Bearer <ADMIN_TOKEN>"
+@api_router.post("/auth/verify", dependencies=[Depends(require_admin)])
 async def verify_auth_token():
-    # Helper endpoint confirming admin access state
-    return {"admin": True, "user": "vishwajit"}
+    return {"admin": True}
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 

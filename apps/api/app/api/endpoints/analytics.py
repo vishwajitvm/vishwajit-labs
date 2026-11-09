@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime, timedelta
 from typing import Optional
 from app.core.db import get_database, safe_insert
+from app.core.security import require_admin
 
 router = APIRouter()
 
@@ -49,25 +50,12 @@ async def log_download(log: DownloadLog, request: Request):
     stored = await safe_insert("downloads", download_entry)
     return {"status": "success", "stored": bool(stored)}
 
-@router.get("/dashboard-stats")
+@router.get("/dashboard-stats", dependencies=[Depends(require_admin)])
 async def get_dashboard_stats(db = Depends(get_database)):
     if db is None:
-        # Return mock numbers for frontend preview
-        return {
-            "visitors_count": 842,
-            "downloads_count": 126,
-            "messages_count": 14,
-            "chat_logs_count": 312,
-            "recent_messages": [
-                {"name": "Alice Recruiter", "email": "alice@hr.com", "message": "Hi, loved TraceNest! Let's talk.", "created_at": datetime.now() - timedelta(days=1)},
-                {"name": "Bob Manager", "email": "bob@ai.dev", "message": "Are you open to contract platform roles?", "created_at": datetime.now() - timedelta(days=3)}
-            ],
-            "recent_visits": [
-                {"url": "/", "visited_at": datetime.now() - timedelta(minutes=5), "ip_address": "127.0.0.1"},
-                {"url": "/projects/tracenest", "visited_at": datetime.now() - timedelta(minutes=18), "ip_address": "192.168.1.1"}
-            ]
-        }
-        
+        return {"database": False, "visitors_count": 0, "downloads_count": 0, "messages_count": 0,
+                "chat_logs_count": 0, "recent_messages": [], "recent_visits": []}
+
     try:
         # Real MongoDB aggregates
         visitors_count = await db["visitors"].count_documents({})
@@ -90,6 +78,7 @@ async def get_dashboard_stats(db = Depends(get_database)):
             recent_visits.append(visit)
             
         return {
+            "database": True,
             "visitors_count": visitors_count,
             "downloads_count": downloads_count,
             "messages_count": messages_count,
@@ -98,4 +87,4 @@ async def get_dashboard_stats(db = Depends(get_database)):
             "recent_visits": recent_visits
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database aggregation failed: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Database unavailable: {e.__class__.__name__}")

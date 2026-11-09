@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ShieldCheck, MessageSquare, Download, Users, Bot, Key, LogOut } from 'lucide-react';
 
 interface StatsResponse {
+  database?: boolean;
   visitors_count: number;
   downloads_count: number;
   messages_count: number;
@@ -22,48 +23,67 @@ interface StatsResponse {
   }>;
 }
 
-export default function AdminDashboard() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
+const TOKEN_KEY = 'admin-token';
+// The token lives only in this tab (sessionStorage) and is checked by the backend on every request.
+const readToken = () => { try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; } };
+const writeToken = (t: string) => { try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY); } catch { /* storage blocked */ } };
 
-  // Fetch telemetry aggregation stats
-  const { data, isLoading } = useQuery<StatsResponse>({
-    queryKey: ['adminStats'],
+class AuthError extends Error {}
+
+async function verify(token: string): Promise<'ok' | 'bad' | 'unset' | 'offline'> {
+  try {
+    const res = await fetch(`${API}/api/auth/verify`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) return 'ok';
+    if (res.status === 401) return 'bad';
+    if (res.status === 503) return 'unset';
+    return 'offline';
+  } catch { return 'offline'; }
+}
+
+const LOGIN_ERRORS = {
+  bad: 'That token isn’t right.',
+  unset: 'Admin access isn’t set up yet: add ADMIN_TOKEN on Render, then try again.',
+  offline: 'Can’t reach the backend. It may be waking up (free hosting), so try again in a minute.',
+};
+
+export default function AdminDashboard() {
+  const [token, setToken] = useState('');
+  const [input, setInput] = useState('');
+  const [checking, setChecking] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const isLoggedIn = !!token;
+
+  // Restore a token from this tab's session, if it's still valid.
+  useEffect(() => {
+    const saved = readToken();
+    if (!saved) return;
+    verify(saved).then((r) => { if (r === 'ok') setToken(saved); else writeToken(''); });
+  }, []);
+
+  const logout = () => { writeToken(''); setToken(''); setInput(''); };
+
+  const { data, isLoading, error } = useQuery<StatsResponse>({
+    queryKey: ['adminStats', token],
     queryFn: async () => {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
-      const res = await fetch(`${apiUrl}/api/analytics/dashboard-stats`);
-      if (!res.ok) {
-        throw new Error('API offline');
-      }
+      const res = await fetch(`${API}/api/analytics/dashboard-stats`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.status === 401 || res.status === 503) throw new AuthError('signed out');
+      if (!res.ok) throw new Error('API offline');
       return res.json();
     },
-    enabled: isLoggedIn, // only load when logged in
-    initialData: {
-      visitors_count: 842,
-      downloads_count: 126,
-      messages_count: 14,
-      chat_logs_count: 312,
-      recent_messages: [
-        { name: "Alice Recruiter", email: "alice@hr.com", message: "Hi, loved TraceNest! Let's talk.", created_at: new Date(Date.now() - 86400000).toISOString() },
-        { name: "Bob Manager", email: "bob@ai.dev", message: "Are you open to contract platform roles?", created_at: new Date(Date.now() - 259200000).toISOString() }
-      ],
-      recent_visits: [
-        { url: "/", visited_at: new Date(Date.now() - 300000).toISOString(), ip_address: "127.0.0.1" },
-        { url: "/projects/tracenest", visited_at: new Date(Date.now() - 1080000).toISOString(), ip_address: "192.168.1.1" }
-      ]
-    }
+    enabled: isLoggedIn,
+    retry: (n, e) => !(e instanceof AuthError) && n < 2,
   });
+  useEffect(() => { if (error instanceof AuthError) logout(); }, [error]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'vishwajit') {
-      setIsLoggedIn(true);
-      setLoginError('');
-    } else {
-      setLoginError('Invalid administrator credentials.');
-    }
+    setChecking(true); setLoginError('');
+    const t = input.trim();
+    const r = await verify(t);
+    setChecking(false);
+    if (r === 'ok') { writeToken(t); setToken(t); }
+    else setLoginError(LOGIN_ERRORS[r]);
   };
 
   // 1. Render Login Screen if not authenticated
@@ -83,27 +103,15 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="admin-username-input" className="text-[9px] text-zinc-400 uppercase">Username</label>
+            <label htmlFor="admin-token-input" className="text-[9px] text-zinc-400 uppercase">Admin token</label>
             <input
-              id="admin-username-input"
-              type="text"
-              required
-              placeholder="e.g. admin"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2 bg-zinc-950 border border-white/10 rounded-lg text-zinc-200 text-xs focus:outline-none focus:border-blue-500/30 font-mono"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="admin-password-input" className="text-[9px] text-zinc-400 uppercase">Password</label>
-            <input
-              id="admin-password-input"
+              id="admin-token-input"
               type="password"
               required
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              placeholder="The ADMIN_TOKEN set on the server"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
               className="w-full px-4 py-2 bg-zinc-950 border border-white/10 rounded-lg text-zinc-200 text-xs focus:outline-none focus:border-blue-500/30 font-mono"
             />
           </div>
@@ -114,10 +122,11 @@ export default function AdminDashboard() {
 
           <button
             type="submit"
-            className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white text-[#030303] text-xs font-bold hover:bg-zinc-200 transition-all cursor-pointer"
+            disabled={checking}
+            className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white text-[#030303] text-xs font-bold hover:bg-zinc-200 transition-all cursor-pointer disabled:opacity-60"
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>SUBMIT_CREDENTIALS</span>
+            <span>{checking ? 'CHECKING…' : 'SIGN_IN'}</span>
           </button>
         </form>
       </div>
@@ -133,10 +142,12 @@ export default function AdminDashboard() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12 border-b border-white/5 pb-8">
           <div>
             <h1 className="text-2xl font-sans font-bold text-white tracking-tight">System Admin Console</h1>
-            <span className="text-[9px] text-blue-400 tracking-wider">telemetry database is live</span>
+            <span className="text-[9px] text-blue-400 tracking-wider">
+              {isLoading ? 'loading…' : error ? 'backend unreachable, retrying…' : data?.database === false ? 'database not connected' : 'telemetry database is live'}
+            </span>
           </div>
           <button 
-            onClick={() => setIsLoggedIn(false)}
+            onClick={logout}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 text-xs hover:bg-red-500/10 transition-all cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />

@@ -32,7 +32,8 @@ origins = [
     "http://127.0.0.1:3000",
     "https://vishwajitvm.dev",
     "https://www.vishwajitvm.dev",
-    "https://vishwajit-labs.vercel.app"
+    "https://vishwajit-labs.vercel.app",
+    "https://vishwajit-labs-web.vercel.app"
 ]
 
 app.add_middleware(

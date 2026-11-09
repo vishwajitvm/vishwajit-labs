@@ -114,6 +114,8 @@ function buildToy(kind: Kind, color: string, s: number) {
 export default function ClayHero() {
   const mount = useRef<HTMLDivElement>(null);
   const tip = useRef<HTMLDivElement>(null);
+  const glass = useRef<HTMLDivElement>(null);
+  const lens = useRef<HTMLDivElement>(null);
   const tidyRef = useRef<() => void>(() => {});
   const [resumeOpen, setResumeOpen] = useState(false);
 
@@ -157,7 +159,7 @@ export default function ClayHero() {
     const halfW = () => { const d = camera.position.distanceTo(target); return Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * d * camera.aspect - 0.9; };
     const mkWall = (nx: number, nz: number) => { const b = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() }); b.quaternion.setFromVectors(new CANNON.Vec3(0, 0, 1), new CANNON.Vec3(nx, 0, nz)); world.addBody(b); walls.push(b); return b; };
     const wl = mkWall(1, 0), wr = mkWall(-1, 0), wb = mkWall(0, 1), wf = mkWall(0, -1);
-    const leftEdge = () => (W > 900 ? -halfW() * 0.02 : -halfW());
+    const leftEdge = () => -halfW();
     const placeWalls = () => { const h = halfW(); wl.position.set(leftEdge(), 0, 0); wr.position.set(h, 0, 0); wb.position.set(0, 0, -2.6); wf.position.set(0, 0, 3.2); };
     placeWalls();
 
@@ -273,6 +275,21 @@ export default function ClayHero() {
     };
     bus.addEventListener('stomp', onStomp);
 
+    // frosted glass with a clear "lens" that follows the cursor
+    const section = host.parentElement as HTMLElement;
+    const onLens = (e: PointerEvent) => {
+      const g = glass.current, l = lens.current; if (!g || !l) return;
+      const r = g.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      const inside = x > 0 && y > 0 && x < r.width && y < r.height;
+      g.style.setProperty('--mx', `${x}px`); g.style.setProperty('--my', `${y}px`);
+      g.classList.toggle('lens', inside); l.classList.toggle('on', inside);
+      l.style.transform = `translate(${e.clientX - section.getBoundingClientRect().left}px, ${e.clientY - section.getBoundingClientRect().top}px)`;
+    };
+    const offLens = () => { glass.current?.classList.remove('lens'); lens.current?.classList.remove('on'); };
+    section.addEventListener('pointermove', onLens);
+    section.addEventListener('pointerleave', offLens);
+
     let visible = true;
     const io = new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0 });
     io.observe(host);
@@ -304,6 +321,8 @@ export default function ClayHero() {
       io.disconnect();
       window.removeEventListener('resize', onResize);
       bus.removeEventListener('stomp', onStomp);
+      section.removeEventListener('pointermove', onLens);
+      section.removeEventListener('pointerleave', offLens);
       renderer.dispose();
       host.innerHTML = '';
     };
@@ -324,6 +343,8 @@ export default function ClayHero() {
   return (
     <section className="hero" id="top" data-hero>
       <div ref={mount} className="hero-3d" />
+      <div ref={glass} className="hero-glass" aria-hidden="true" />
+      <div ref={lens} className="hero-lens" aria-hidden="true"><span>clear view</span></div>
       <div ref={tip} className="toy-tip" />
       <div className="hero-copy">
         <a href="#contact" className="avail jiggle"><i /> Available for freelance &amp; contract work</a>

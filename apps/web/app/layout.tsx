@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./lab.css";
 import LenisProvider from "@/components/LenisProvider";
 import QueryProvider from "@/components/QueryProvider";
 

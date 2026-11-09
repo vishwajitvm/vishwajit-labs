@@ -111,6 +111,15 @@ function buildToy(kind: Kind, color: string, s: number) {
   return { group: g, body, mat: m };
 }
 
+/** Résumés served from /public/assets/resume-<id>.pdf */
+const RESUMES = [
+  { id: 'backend', icon: '⚙️', label: 'Backend Developer' },
+  { id: 'python', icon: '🐍', label: 'Python Developer' },
+  { id: 'nodejs', icon: '🟢', label: 'Node.js Developer' },
+  { id: 'fullstack', icon: '🧱', label: 'Full Stack Developer' },
+  { id: 'ai', icon: '🤖', label: 'AI Engineer' },
+];
+
 export default function ClayHero() {
   const mount = useRef<HTMLDivElement>(null);
   const tip = useRef<HTMLDivElement>(null);
@@ -328,15 +337,14 @@ export default function ClayHero() {
     };
   }, []);
 
-  const downloadResume = async (type: 'ai' | 'fullstack') => {
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
-      await fetch(`${apiUrl}/api/analytics/log-download`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file_type: `resume_${type}`, source: 'hero_button' }),
-      });
-    } catch { /* download anyway */ }
-    window.open(`/assets/resume-${type}.pdf`, '_blank');
+  // The PDF opens straight from the link; analytics is fire-and-forget so a sleeping
+  // backend (Render free tier takes ~50s to wake) never delays the résumé.
+  const logResume = (type: string) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vishwajit-labs-backend.onrender.com';
+    fetch(`${apiUrl}/api/analytics/log-download`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+      body: JSON.stringify({ file_type: `resume_${type}`, source: 'hero_button' }),
+    }).catch(() => {});
     setResumeOpen(false);
   };
 
@@ -359,8 +367,12 @@ export default function ClayHero() {
             <button className="btn btn-paper pop" onClick={() => setResumeOpen(!resumeOpen)}>Résumé ▾</button>
             {resumeOpen && (
               <div className="dd-menu">
-                <button onClick={() => downloadResume('ai')}>🤖 AI &amp; backend résumé</button>
-                <button onClick={() => downloadResume('fullstack')}>🧱 Full-stack résumé</button>
+                <small>Pick the one that fits the role · PDF</small>
+                {RESUMES.map((r) => (
+                  <a key={r.id} href={`/assets/resume-${r.id}.pdf`} target="_blank" rel="noopener" onClick={() => logResume(r.id)}>
+                    <span>{r.icon}</span>{r.label}
+                  </a>
+                ))}
               </div>
             )}
           </div>

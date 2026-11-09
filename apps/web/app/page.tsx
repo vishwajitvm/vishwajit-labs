@@ -24,8 +24,11 @@ export default function Home() {
       }),
     }).catch(() => {});
 
-    // Reveal-on-scroll for anything marked [data-reveal]-able.
-    const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add('in')), { threshold: 0.12 });
+    // Reveal-on-scroll. Trigger on the first pixels entering the screen (not a % of the
+    // section): on phones some sections are taller than 8 screens, so a ratio never fires.
+    const io = new IntersectionObserver((es) => es.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }), { threshold: 0, rootMargin: '0px 0px -8% 0px' });
     document.querySelectorAll('.sec').forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, []);

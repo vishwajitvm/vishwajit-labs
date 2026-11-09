@@ -45,7 +45,7 @@ export function AskAI() {
 
   return (
     <>
-      <button className={`ai-fab pop ${open ? 'hide' : ''}`} onClick={() => setOpen(true)}>✨ Ask my AI</button>
+      <button className={`ai-fab pop ${open ? 'hide' : ''}`} onClick={() => setOpen(true)} aria-label="Ask my AI">✨ <span className="fab-long">Ask my&nbsp;</span>AI</button>
       {open && (
         <div className="ai-panel">
           <div className="ai-head"><span className="ai-dot" /><b>Vishwajit’s AI</b><small>usually answers in seconds</small><button onClick={() => setOpen(false)} aria-label="Close chat">✕</button></div>

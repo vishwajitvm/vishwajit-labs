@@ -31,25 +31,35 @@ const writeToken = (t: string) => { try { if (t) sessionStorage.setItem(TOKEN_KE
 
 class AuthError extends Error {}
 
-async function verify(token: string): Promise<'ok' | 'bad' | 'unset' | 'offline'> {
+async function verify(token: string): Promise<boolean> {
   try {
     const res = await fetch(`${API}/api/auth/verify`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
-    if (res.ok) return 'ok';
-    if (res.status === 401) return 'bad';
-    if (res.status === 503) return 'unset';
-    return 'offline';
-  } catch { return 'offline'; }
+    return res.ok;
+  } catch { return false; }
 }
 
-const LOGIN_ERRORS = {
-  bad: 'That token isn’t right.',
-  unset: 'Admin access isn’t set up yet: add your token’s hash to MongoDB (admin_settings → token_sha256), then try again in a few seconds.',
-  offline: 'Can’t reach the backend. It may be waking up (free hosting), so try again in a minute.',
-};
+/** Email + password → a session token (12 hours), or an error message to show. */
+async function signIn(email: string, password: string): Promise<{ token?: string; error?: string }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+  } catch {
+    return { error: 'Can’t reach the backend. It may be waking up (free hosting), so try again in a minute.' };
+  }
+  if (res.ok) return { token: (await res.json()).token };
+  if (res.status === 401) return { error: 'Wrong email or password.' };
+  if (res.status === 429) return { error: 'Too many attempts. Wait 15 minutes and try again.' };
+  if (res.status === 503) {
+    const detail = await res.json().then((j) => j.detail as string).catch(() => '');
+    return { error: detail.includes('ADMIN_PASSWORD') ? 'No admin account yet: add ADMIN_PASSWORD on Render (Environment), wait for the redeploy, then sign in.' : 'The database isn’t connected right now.' };
+  }
+  return { error: `Sign-in failed (HTTP ${res.status}). Try again in a minute.` };
+}
 
 export default function AdminDashboard() {
   const [token, setToken] = useState('');
-  const [input, setInput] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [checking, setChecking] = useState(false);
   const [loginError, setLoginError] = useState('');
   const isLoggedIn = !!token;
@@ -58,10 +68,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     const saved = readToken();
     if (!saved) return;
-    verify(saved).then((r) => { if (r === 'ok') setToken(saved); else writeToken(''); });
+    verify(saved).then((ok) => { if (ok) setToken(saved); else writeToken(''); });
   }, []);
 
-  const logout = () => { writeToken(''); setToken(''); setInput(''); };
+  const logout = () => {
+    const t = readToken();
+    if (t) fetch(`${API}/api/auth/logout`, { method: 'POST', headers: { Authorization: `Bearer ${t}` } }).catch(() => {});
+    writeToken(''); setToken(''); setPassword('');
+  };
 
   const { data, isLoading, error } = useQuery<StatsResponse>({
     queryKey: ['adminStats', token],
@@ -79,11 +93,10 @@ export default function AdminDashboard() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setChecking(true); setLoginError('');
-    const t = input.trim();
-    const r = await verify(t);
+    const r = await signIn(email.trim(), password);
     setChecking(false);
-    if (r === 'ok') { writeToken(t); setToken(t); }
-    else setLoginError(LOGIN_ERRORS[r]);
+    if (r.token) { writeToken(r.token); setToken(r.token); setPassword(''); }
+    else setLoginError(r.error || 'Sign-in failed.');
   };
 
   // 1. Render Login Screen if not authenticated
@@ -103,15 +116,29 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="admin-token-input" className="text-[9px] text-zinc-400 uppercase">Admin token</label>
+            <label htmlFor="admin-email-input" className="text-[9px] text-zinc-400 uppercase">Email</label>
             <input
-              id="admin-token-input"
+              id="admin-email-input"
+              type="email"
+              required
+              autoComplete="username"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2 bg-zinc-950 border border-white/10 rounded-lg text-zinc-200 text-xs focus:outline-none focus:border-blue-500/30 font-mono"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="admin-password-input" className="text-[9px] text-zinc-400 uppercase">Password</label>
+            <input
+              id="admin-password-input"
               type="password"
               required
               autoComplete="current-password"
-              placeholder="The ADMIN_TOKEN set on the server"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
+              placeholder="••••••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 bg-zinc-950 border border-white/10 rounded-lg text-zinc-200 text-xs focus:outline-none focus:border-blue-500/30 font-mono"
             />
           </div>

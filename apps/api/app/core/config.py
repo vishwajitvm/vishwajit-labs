@@ -5,7 +5,10 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Vishwajit Labs API"
     API_V1_STR: str = "/api"
     SECRET_KEY: str = "super-secret-key-change-in-production"
-    # Admin dashboard token (optional): the hash can live in MongoDB instead, see app/core/security.py.
+    # /admin sign-in (see app/core/security.py). ADMIN_PASSWORD creates/updates the account on startup;
+    # only a salted hash is stored in MongoDB (admin_users).
+    ADMIN_EMAIL: str = "vishwajitmall50@gmail.com"
+    ADMIN_PASSWORD: Optional[str] = None
     ADMIN_TOKEN: Optional[str] = None
     
     # MongoDB

@@ -6,9 +6,8 @@ import logging
 
 from app.core.config import settings
 from app.core.db import connect_to_mongo, close_mongo_connection, connect_to_redis, close_redis_connection
-from app.core.security import require_admin
-from fastapi import Depends
-from app.api.endpoints import contact, github, chat, playground, analytics
+from app.core.security import seed_admin_from_env
+from app.api.endpoints import contact, github, chat, playground, analytics, auth
 
 # Initialize Logging
 logging.basicConfig(level=logging.INFO)
@@ -50,6 +49,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     await connect_to_mongo()
+    await seed_admin_from_env()
     await connect_to_redis()
 
 @app.on_event("shutdown")
@@ -64,11 +64,7 @@ api_router.include_router(github.router, prefix="/github", tags=["github"])
 api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(playground.router, prefix="/playground", tags=["playground"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
-
-# Admin sign-in check: succeeds only with "Authorization: Bearer <ADMIN_TOKEN>"
-@api_router.post("/auth/verify", dependencies=[Depends(require_admin)])
-async def verify_auth_token():
-    return {"admin": True}
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 

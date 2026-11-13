@@ -1,12 +1,14 @@
 // Detailed case studies for every project on the portfolio.
 // Facts follow the LinkedIn Projects section; architecture is a simplified view of each system.
-export type Kind = 'product' | 'client' | 'freelance';
+export type Kind = 'product' | 'oss' | 'client' | 'freelance';
 export interface Tier { name: string; nodes: { label: string; sub?: string }[] }
+export interface NpmPackage { name: string; url: string; note: string }
 export interface Work {
   id: string; name: string; tagline: string; kind: Kind; org: string; when?: string;
   emoji: string; color: string; featured?: boolean; status: string;
   stats?: string[];
-  links: { live?: string; code?: string; pypi?: string };
+  links: { live?: string; code?: string; pypi?: string; npm?: string; docs?: string };
+  packages?: NpmPackage[];   // npm packages that belong to this project
   overview: string;          // TL;DR at the top of the modal
   problem: string;           // what it solves
   why: string;               // why it matters
@@ -513,6 +515,386 @@ export const WORK: Work[] = [
       ],
       flow: ['You upload a photo.', 'A vision model identifies the foods.', 'Nutrition values are looked up in USDA and Open Food Facts, not guessed.'],
     },
+  },
+  // ---------------- open source: the Strutvane ecosystem (github.com/vishwajit-vm) ----------------
+  {
+    id: 'strutvane', name: 'Strutvane', tagline: 'TypeScript framework & npm ecosystem for B2B apps', kind: 'oss', org: 'vishwajit-vm', when: '2026 – now', emoji: '🧭', color: '#9FD0FF', featured: true, status: 'Phase 0 complete',
+    stats: ['12 repositories', '10 npm packages', '9 spikes · 419 tests', '16 ADRs · 4 RFCs'],
+    links: { code: 'https://github.com/vishwajit-vm/strutvane', docs: 'https://vishwajit-vm.github.io/strutvane-docs/', npm: 'https://www.npmjs.com/~vishwajitjitvm' },
+    packages: [
+      { name: 'strutvane', url: 'https://www.npmjs.com/package/strutvane', note: 'Global CLI launcher (sv)' },
+      { name: 'create-strutvane', url: 'https://www.npmjs.com/package/create-strutvane', note: 'npm create strutvane@latest project starter' },
+      { name: '@strutvane/framework', url: 'https://www.npmjs.com/package/@strutvane/framework', note: 'Models, migrations, CRUD API, OpenAPI' },
+      { name: '@strutvane/auth', url: 'https://www.npmjs.com/package/@strutvane/auth', note: 'Identity, RBAC/ABAC, multi-tenancy, audit' },
+      { name: '@strutvane/ui', url: 'https://www.npmjs.com/package/@strutvane/ui', note: 'Metadata-driven React UI' },
+      { name: '@strutvane/core', url: 'https://www.npmjs.com/package/@strutvane/core', note: 'Kernel: container, providers, config, events' },
+      { name: '@strutvane/contracts', url: 'https://www.npmjs.com/package/@strutvane/contracts', note: 'Shared types & wire protocols' },
+      { name: '@strutvane/cli', url: 'https://www.npmjs.com/package/@strutvane/cli', note: 'Project-local CLI implementation' },
+      { name: '@strutvane/devkit', url: 'https://www.npmjs.com/package/@strutvane/devkit', note: 'SDK for installers, generators, plugins' },
+      { name: '@strutvane/logs', url: 'https://www.npmjs.com/package/@strutvane/logs', note: 'Zero-config logging + log viewer' },
+    ],
+    overview: 'Strutvane is an open-source TypeScript framework and package ecosystem for enterprise B2B apps. You declare your models as fields and types; one command gives you database migrations, a secured and documented CRUD API, authentication with RBAC and multi-tenancy, and a complete UI — all as ordinary TypeScript your team owns. It is designed in the open in my GitHub organisation, vishwajit-vm. Phase 0 (foundations) is complete and Phase 1 is next; the 10 npm package names are reserved placeholders until the first release.',
+    problem: 'Every B2B product rebuilds the same backbone by hand: CRUD APIs, migrations, login, roles and permissions, tenant isolation, audit logs and admin screens. Code generators save a day but leave a pile of code nobody wants to touch, and “low-code” tools lock you in — and most frameworks keep RBAC, audit and SSO behind a paid tier.',
+    why: 'Strutvane aims for “Laravel’s ecosystem, built natively for TypeScript”: a realistic app with 10–20 models, auth, RBAC and a full UI running in one to two hours, without giving up ownership. Generated files are thin and read model metadata at runtime, so adding a field never means regenerating code — and enterprise features stay MIT-licensed in the open core.',
+    audience: 'TypeScript teams building internal tools, admin panels and multi-tenant B2B SaaS — and developers who want enterprise-grade defaults without a black box.',
+    capabilities: [
+      'Start a project with npm create strutvane@latest — full-stack, API-only or UI-only (planned).',
+      'Declare a model once with defineModel and field.*, and get a migration, a CRUD API and screens from it (planned).',
+      'Get OpenAPI 3.1 docs at /docs and a typed client for free (planned).',
+      'Secure every route with RBAC/ABAC policies that compile to SQL, with Postgres row-level security for tenants (planned).',
+      'Choose your level of control: declare, configure, override or eject (L0–L3) — and upgrade ejected code with a three-way merge (planned).',
+      'Add packages with sv add; each one installs its own config, .env + .env.example, migrations, routes and screens (planned).',
+      'Read the friendly, example-first documentation today at the live docs site.',
+    ],
+    built: [
+      'Founded and lead the project: 12 GitHub repositories in the vishwajit-vm organisation and 10 reserved npm package names (strutvane, create-strutvane and @strutvane/*).',
+      'Wrote the blueprint: 18 design documents (architecture, developer experience, package specs, CLI reference, security model with a STRIDE threat model mapped to OWASP API Top 10 and ASVS 5.0 L2, roadmap, integration map), 16 architecture decision records and 4 RFCs.',
+      'Ran 9 time-boxed validation spikes against real engines (PGlite, libSQL, PostgreSQL 18, PgBouncer) — 419 tests in total — because “mocks don’t count as evidence”.',
+      'Turned every defect the spikes found into a mandatory rule: a tenant leaking through PgBouncer 40/40 times, sessions surviving a password reset, timing that revealed which emails exist, X-Forwarded-For spoofing, and log rotation breaking across processes.',
+      'Built and released the shared foundation: @strutvane/contracts (v0, 100% coverage), shared tooling with SHA-pinned CI and npm trusted publishing, and the live documentation site.',
+      'Passed the Phase 0 gate (2026-11-14) and planned Phase 1: core, CLI, devkit, framework and logs → 0.1 alpha.',
+    ],
+    stack: {
+      Language: ['Node.js', 'TypeScript (strict, ESM)'], Backend: ['REST', 'Hono', 'Drizzle', 'Kysely', 'Zod', 'OpenAPI 3.1'],
+      Data: ['PostgreSQL', 'MySQL', 'SQLite', 'Valkey'], Frontend: ['React', 'Vite', 'Tailwind CSS', 'TanStack'],
+      Security: ['RBAC', 'OAuth / OIDC', 'Row-level security'], Platform: ['GitHub Actions', 'OpenTelemetry', 'npm trusted publishing'],
+    },
+    arch: {
+      tiers: [
+        { name: 'Your app', nodes: [{ label: 'app/ models', sub: 'defineModel' }, { label: 'web/', sub: 'owned UI code' }] },
+        { name: 'Product packages', nodes: [{ label: 'framework', sub: 'models · CRUD API' }, { label: 'auth', sub: 'RBAC · tenancy' }, { label: 'ui', sub: 'React screens' }] },
+        { name: 'Adapters', nodes: [{ label: 'Database drivers', sub: 'Postgres · MySQL · SQLite' }, { label: 'HTTP hosts', sub: 'Hono · Express · Fastify · Nest' }] },
+        { name: 'Kernel & SDK', nodes: [{ label: 'core', sub: 'container · providers · events' }, { label: 'devkit', sub: 'installers · generators' }] },
+        { name: 'Foundation', nodes: [{ label: 'contracts', sub: 'zero runtime deps' }] },
+      ],
+      flow: [
+        'npm create strutvane@latest acme asks for a preset, database, auth methods and tenancy, and generates the project with .env + .env.example, local Docker services, an admin seed and CI.',
+        'pnpm sv make:model Invoice … writes a thin invoice.model.ts; pnpm sv migrate diffs models against the database and writes a reviewed SQL migration — asking about renames and blocking destructive changes.',
+        'On pnpm dev, a registry compiler reads your models with static analysis (never executing your code) and generates a typed registry and API client.',
+        'Each request: resolve the actor and tenant → parse the list query → validate with Zod → check permissions and compile the policy to SQL → run in a transaction with the tenant set for row-level security.',
+        'Hooks and the handler run; the audit entry and outbox events are written in the same transaction; only fields the actor may see are returned — or an RFC 9457 problem+json error.',
+        'The React UI reads /.well-known/strutvane.json and renders list, form and detail pages for /invoices automatically.',
+      ],
+    },
+    challenges: [
+      { q: 'Generate everything, yet own every line?', a: 'Generated files are thin and read model metadata at runtime, so adding a field needs no regeneration. Four levels — declare, configure, override, eject — cover the rest, and ejected code upgrades with a three-way merge.' },
+      { q: 'Independent packages that still fit together.', a: 'Packages never import each other. They cooperate only through shared contracts, container tokens, hooks, events and installer “enhances” — enforced in CI.' },
+      { q: 'No cross-tenant data leaks.', a: 'Isolation is enforced inside the database with row-level security under five mandatory rules (ADR-0007), on top of app-level query scoping — proven with 2,400 concurrent transactions and 0 cross-tenant rows.' },
+    ],
+  },
+  {
+    id: 'strutvane-framework', name: 'Strutvane Framework', tagline: 'Backend & database core: models, migrations, CRUD API, OpenAPI', kind: 'oss', org: 'vishwajit-vm', emoji: '🏗️', color: '#B9A6FF', status: 'Designed · Phase 1',
+    stats: ['10 routes per model', 'OpenAPI 3.1', '2 spikes · 74 tests'],
+    links: { code: 'https://github.com/vishwajit-vm/strutvane-framework', docs: 'https://vishwajit-vm.github.io/strutvane-docs/packages/framework/', npm: 'https://www.npmjs.com/package/@strutvane/framework' },
+    packages: [{ name: '@strutvane/framework', url: 'https://www.npmjs.com/package/@strutvane/framework', note: 'Name reserved · first release planned for 0.1 alpha' }],
+    overview: '@strutvane/framework is the backend and database heart of Strutvane. You describe a model as fields and types; it produces the database migration, a secured CRUD API with filtering, search, sorting and paging, OpenAPI 3.1 documentation and a typed client — plus queues, schedules, cache and mail. It is fully designed; implementation starts in Phase 1.',
+    problem: 'Each new resource in a typical Node backend means hand-writing a migration, a controller, validation, pagination, filtering, permission checks and docs — the same boilerplate, slightly different every time, and easy to get subtly wrong.',
+    why: 'One model definition drives the database, the API and the docs, through one carefully designed request pipeline. Developers keep full control with hooks, custom actions, handler overrides or sv eject api when they need it.',
+    audience: 'API and full-stack TypeScript developers building B2B backends.',
+    capabilities: [
+      'Define models with defineModel and field.* builders (string, decimal, enum, belongsTo…).',
+      'Get auto-diffed SQL migrations, plus manual migrations, seeders and factories — or introspect an existing database with sv db:pull.',
+      'Get 10 routes per model: list, show, create, update, replace, delete, restore, bulk, export and query.',
+      'Filter, search, sort, page (keyset or offset), include relations and choose fields with one list protocol: filter[field][op].',
+      'Read OpenAPI 3.1 at /openapi.json, browse docs at /docs and use a generated typed client.',
+      'Use queues, schedules, cache, mail, a transactional outbox and API versioning.',
+    ],
+    built: [
+      'Designed the model DSL, the resource (CRUD) engine and the request pipeline: parse → validate → authorize → scope by tenant and policy → before-hooks → handler → after-hooks → audit and outbox → serialize.',
+      'Proved the database layer in spike 01 (23 tests on Postgres and SQLite) and the resource pipeline in spike 05 (51 tests).',
+      'Chose to own rename resolution in migrations after drizzle-kit 0.31 proved unreliable: the migrator asks instead of guessing, records the answer in the migration header and blocks destructive changes (ADR-0009).',
+      'Designed a custom OpenAPI serializer, because OpenAPI can’t express filter[field][op] and the alternatives failed strict type-checking or missed routes (ADR-0011).',
+      'Specified an advisory lock so migrations never run twice across replicas.',
+    ],
+    stack: { Runtime: ['Node.js', 'TypeScript', 'Hono'], Data: ['PostgreSQL', 'SQLite', 'MySQL', 'Drizzle', 'Kysely'], API: ['REST', 'OpenAPI 3.1', 'Zod 4'], Jobs: ['BullMQ', 'Valkey'], Observability: ['OpenTelemetry'] },
+    arch: {
+      tiers: [
+        { name: 'HTTP', nodes: [{ label: 'Host adapters', sub: 'Hono · Express · Fastify · Nest' }] },
+        { name: 'Resource engine', nodes: [{ label: 'Request pipeline', sub: 'validate · authorize · scope' }, { label: 'Hooks & actions' }] },
+        { name: 'Data adapter', nodes: [{ label: 'Drizzle + Kysely', sub: 'behind an internal adapter' }, { label: 'Migrator', sub: 'owned rename resolution' }] },
+        { name: 'Databases', nodes: [{ label: 'PostgreSQL', sub: 'tier 1' }, { label: 'SQLite · MySQL' }] },
+      ],
+      flow: [
+        'A request arrives at the HTTP host and is parsed into a typed list or write operation.',
+        'Input is validated with Zod; the permission provider authorizes it and adds the tenant and policy filter.',
+        'Before-hooks run, then the handler executes the query through the data adapter.',
+        'After-hooks run; the audit entry and outbox events are written in the same transaction.',
+        'Only visible fields are serialized; errors return as RFC 9457 problem+json.',
+      ],
+    },
+    challenges: [
+      { q: 'Migrations that never lose data.', a: 'Strutvane owns rename detection — it asks, records the answer and blocks destructive changes, instead of trusting a tool that guesses (ADR-0009).' },
+      { q: 'Documenting a rich filter syntax.', a: 'A custom OpenAPI serializer describes filter[field][op] faithfully, and the docs page is self-hosted (ADR-0011).' },
+    ],
+  },
+  {
+    id: 'strutvane-auth', name: 'Strutvane Auth', tagline: 'Identity, RBAC/ABAC compiled to SQL, multi-tenancy & audit', kind: 'oss', org: 'vishwajit-vm', emoji: '🔐', color: '#FFB59A', status: 'Designed · Phase 2',
+    stats: ['policies → SQL', 'Postgres RLS', '3 spikes · 156 tests'],
+    links: { code: 'https://github.com/vishwajit-vm/strutvane-auth', docs: 'https://vishwajit-vm.github.io/strutvane-docs/packages/auth/', npm: 'https://www.npmjs.com/package/@strutvane/auth' },
+    packages: [{ name: '@strutvane/auth', url: 'https://www.npmjs.com/package/@strutvane/auth', note: 'Name reserved · planned for 0.2' }],
+    overview: '@strutvane/auth handles who you are, what you may do and which tenant you belong to. Authentication plugs in through adapters (Better Auth by default, or OIDC/SAML providers); authorization, tenancy and audit are native. Policies are written once and compile to SQL, so the database only ever returns rows a user is allowed to see. It works inside Strutvane or standalone in Hono, Express, Fastify, Nest and Next.js apps.',
+    problem: 'Permission checks scattered through controllers drift out of sync, “filter in memory” leaks data at scale, and multi-tenant apps are one forgotten WHERE clause away from showing one customer another customer’s data.',
+    why: 'Writing a rule once and enforcing it in the database — with row-level security as a second wall — makes data leaks structurally hard, and makes every decision explainable with auth:explain.',
+    audience: 'B2B backend teams that need SSO, roles, tenant isolation and an audit trail.',
+    capabilities: [
+      'Sign in with email and password, magic links, social login, MFA (TOTP and passkeys), API keys or service accounts.',
+      'Connect enterprise identity (Microsoft Entra ID, Okta, Keycloak) through OIDC or SAML.',
+      'Write allow/deny policies with definePolicy, including field-level rules, and see why a decision was made with auth:explain.',
+      'Isolate tenants with a shared schema and row-level security, a schema per tenant, or a database per tenant.',
+      'Keep an audit log written in the same transaction, with redaction and an optional hash chain.',
+      'Use ready-made auth API routes and screens; SCIM 2.0 provisioning is planned for Phase 4.',
+    ],
+    built: [
+      'Designed the auth package: identity adapters, the policy engine, tenancy resolution and the audit sink.',
+      'Proved policy-to-SQL compilation in spike 02 (70 tests, 43,930 property-based comparisons, 0 mismatches) and tenant isolation in spike 03 (37 tests, 2,400 concurrent transactions, 0 cross-tenant rows).',
+      'Proved the hardened auth adapter in spike 07 (49 tests on PostgreSQL 18; 3 planted bugs caught; a second engine passes the same contract suite).',
+      'Wrote five mandatory row-level-security rules (ADR-0007) after finding that a session-level SET leaked the tenant to another client through PgBouncer 40 times out of 40.',
+      'Defined a hardened adapter (ADR-0013): shared rate-limit storage, trusted proxies only, sessions revoked on password reset, constant-time resets and a 12-character minimum password.',
+    ],
+    stack: { Security: ['RBAC', 'OAuth / OIDC', 'Keycloak', 'Microsoft Entra ID', 'JWT'], Data: ['PostgreSQL', 'Row-level security'], Libraries: ['Better Auth', 'jose', 'argon2id', 'WebAuthn'], Runtime: ['Node.js', 'TypeScript'] },
+    arch: {
+      tiers: [
+        { name: 'Identity', nodes: [{ label: 'IdentityEngine adapters', sub: 'Better Auth · OIDC · SAML' }] },
+        { name: 'Authorization', nodes: [{ label: 'Policy engine', sub: 'definePolicy → QueryFilter' }, { label: 'SQL compiler', sub: 'NULL-safe' }] },
+        { name: 'Tenancy', nodes: [{ label: 'Tenant resolver', sub: 're-checked every request' }, { label: 'Postgres RLS', sub: '5 mandatory rules' }] },
+        { name: 'Audit', nodes: [{ label: 'Audit sink', sub: 'same transaction · redacted' }] },
+      ],
+      flow: [
+        'A request hook turns a session, JWT or API key into an Actor.',
+        'The tenant resolver produces a TenantContext, re-checked against membership on every request.',
+        'Before the query runs, the policy engine adds a filter describing exactly which rows the actor may see.',
+        'That filter compiles to NULL-safe SQL, and row-level security enforces the tenant inside the database.',
+        'Fields the actor may not read are stripped from the response; the audit entry is written in the same transaction.',
+      ],
+    },
+    challenges: [
+      { q: 'The same rule in memory and in SQL.', a: 'Two-valued, NULL-safe semantics (IS DISTINCT FROM, COALESCE(…, FALSE)) behind one validation gate; a null actor never matches — which closed a privilege-escalation trap the spike found (ADR-0008).' },
+      { q: 'Row-level security behind a connection pool.', a: 'RESTRICTIVE policies, fail-closed settings, transaction-local set_config only, a runtime role that can’t bypass RLS, and a helper that destroys broken connections (ADR-0007).' },
+      { q: 'Trusting a third-party auth library.', a: 'A mandatory hardened adapter fixes what the spike exposed: sessions surviving a password reset, timing that revealed which emails exist (419 ms vs 12 ms) and X-Forwarded-For spoofing (ADR-0013).' },
+    ],
+  },
+  {
+    id: 'strutvane-ui', name: 'Strutvane UI', tagline: 'Metadata-driven React UI for Strutvane or any OpenAPI backend', kind: 'oss', org: 'vishwajit-vm', emoji: '🖥️', color: '#9FE8C8', status: 'Designed · Phase 3',
+    stats: ['0 axe-core violations', '500 virtualized rows', 'spike · 48 tests'],
+    links: { code: 'https://github.com/vishwajit-vm/strutvane-ui', docs: 'https://vishwajit-vm.github.io/strutvane-docs/packages/ui/', npm: 'https://www.npmjs.com/package/@strutvane/ui' },
+    packages: [{ name: '@strutvane/ui', url: 'https://www.npmjs.com/package/@strutvane/ui', note: 'Name reserved · planned for 0.3' }],
+    overview: '@strutvane/ui turns API metadata into a complete admin interface: list pages with filters, bulk actions and export, create and edit forms, detail pages, and auth and admin screens. It reads the Strutvane manifest — or infers one from any OpenAPI 3.x API — and every component is owned, shadcn-compatible code you can override or eject.',
+    problem: 'Admin UIs are 80% the same tables, forms and filters, yet teams rebuild them for every resource — and front-end filters, validation and permissions quietly drift away from what the API actually enforces.',
+    why: 'Driving the UI from the same metadata as the API keeps them in sync, and owned components mean the generated screens are a starting point, not a cage.',
+    audience: 'Full-stack teams using Strutvane, and front-end developers who just want a UI for an existing OpenAPI backend.',
+    capabilities: [
+      'Get list, form and detail pages for every resource automatically — with filters, bulk actions, export and saved views.',
+      'Use built-in auth and admin screens, including a tenant switcher.',
+      'See only what you’re allowed to: the UI hides what the API forbids (and the API still enforces it).',
+      'Theme with design tokens and dark mode; override any field, widget or page — or eject the screens.',
+      'Point it at any OpenAPI 3.x API in UI-only mode.',
+    ],
+    built: [
+      'Designed the UI package: a headless core with no React, a React renderer, and owned components in your web/ folder.',
+      'Proved it in spike 08: 48 tests, axe-core 0 accessibility violations, 500 virtualized rows, and 5 real UI defects found and fixed.',
+      'Designed one shared filter builder for the URL parser and the filter bar, so client and server filters can’t drift (ADR-0014).',
+      'Designed a typed component registry and error placement that maps a 422 issue to the exact field it belongs to.',
+    ],
+    stack: { Frontend: ['React', 'Vite', 'Tailwind CSS', 'TanStack Router · Query · Table · Form'], Components: ['shadcn registry', 'Base UI', 'Lucide'], Quality: ['Playwright', 'axe-core'] },
+    arch: {
+      tiers: [
+        { name: 'Your code', nodes: [{ label: 'web/', sub: 'owned components' }] },
+        { name: 'Renderer', nodes: [{ label: 'ui/react', sub: 'pages · forms · tables' }, { label: 'Component registry', sub: 'typed overrides' }] },
+        { name: 'Headless core', nodes: [{ label: 'ui/core', sub: 'no React · query state' }] },
+        { name: 'Metadata', nodes: [{ label: 'Manifest', sub: 'strutvane.json · OpenAPI' }, { label: 'contracts', sub: 'ListQuery · Problem' }] },
+      ],
+      flow: [
+        'The UI loads the manifest — from Strutvane, inferred from OpenAPI, or a local ui.resources.ts.',
+        'Resources register their routes; list state lives in the URL so views are shareable.',
+        'List queries go to the server, which does all filtering, sorting and paging.',
+        'The registry picks the right widget for each field: field override → named widget → field type → default.',
+        'Validation errors map to the deepest matching field (for example lines[1].amount), else its parent, else a form banner.',
+      ],
+    },
+    challenges: [
+      { q: 'Client and server filters drifting apart.', a: 'All list operations run on the server, and the URL parser and filter bar share one filter builder (ADR-0014).' },
+      { q: 'Customise without forking.', a: 'A typed registry resolves components field-first, and one shared field wrapper owns accessibility for every widget.' },
+    ],
+  },
+  {
+    id: 'strutvane-cli', name: 'Strutvane CLI & starter', tagline: 'npm create strutvane@latest, the sv CLI and the devkit SDK', kind: 'oss', org: 'vishwajit-vm', emoji: '⌨️', color: '#FFE07A', status: 'Designed · Phase 1',
+    stats: ['3 repositories', '~14 generators', '3-way merge · 47 tests'],
+    links: { code: 'https://github.com/vishwajit-vm/strutvane-cli', docs: 'https://vishwajit-vm.github.io/strutvane-docs/reference/cli/', npm: 'https://www.npmjs.com/package/strutvane' },
+    packages: [
+      { name: 'create-strutvane', url: 'https://www.npmjs.com/package/create-strutvane', note: 'Project starter · github.com/vishwajit-vm/create-strutvane' },
+      { name: 'strutvane', url: 'https://www.npmjs.com/package/strutvane', note: 'Global launcher that finds your project’s CLI' },
+      { name: '@strutvane/cli', url: 'https://www.npmjs.com/package/@strutvane/cli', note: 'Project-local CLI implementation' },
+      { name: '@strutvane/devkit', url: 'https://www.npmjs.com/package/@strutvane/devkit', note: 'SDK for installers, generators and codemods · github.com/vishwajit-vm/strutvane-devkit' },
+    ],
+    overview: 'The developer-experience layer of Strutvane, across three repositories: create-strutvane scaffolds a new project, the sv CLI runs everyday work (generators, migrations, packages, upgrades), and the devkit SDK powers every installer and generator with staged, transactional file writes — so a failed command never leaves your project half-changed.',
+    problem: 'Scaffolding tools generate a project once and then abandon you: adding a package means editing configs by hand, generators clobber your changes, and upgrading means re-applying weeks of edits.',
+    why: 'Every Strutvane command previews its changes, applies them as one transaction, and upgrades ejected code with a three-way merge — so automation never costs you your own edits.',
+    audience: 'Every Strutvane developer — and package and plugin authors building installers.',
+    capabilities: [
+      'Create a project with presets (full, api, ui) and choices for database, auth methods, tenancy and package manager.',
+      'Add or remove packages with sv add / sv remove; installers write config, env vars, migrations and routes.',
+      'Generate models, resources and more with about 14 make:* generators — each with --dry-run --diff.',
+      'Run migrations, seeds, db:pull, routes, permissions, doctor (including a row-level-security audit) and env:check.',
+      'Start local Postgres, Valkey and Mailpit with sv up.',
+      'Eject code and upgrade safely with a three-way merge; script everything with --json and defined exit codes.',
+    ],
+    built: [
+      'Designed the CLI command set, exit codes and the global-launcher → local-CLI delegation that keeps the CLI version in step with each project.',
+      'Proved the upgrade merge in spike 06 (47 tests, 8,000 property cases): merging runs on normalised keys with line endings, BOM and final newline merged three-way, sha256-verified base copies, and a journaled apply (ADR-0012).',
+      'Designed devkit: defineInstaller (idempotent, reversible, previewable), defineGenerator, a staged transactional file system, an env editor that keeps .env and .env.example in sync, and an AST config patcher.',
+      'Designed create-strutvane’s templates to be tested by generate → typecheck → lint → test on Windows, macOS and Linux; the Phase 1 gate is an external developer building a 5-model API from the tutorial in under 30 minutes.',
+    ],
+    stack: { Runtime: ['Node.js', 'TypeScript'], Tooling: ['pnpm', 'tsdown', 'Biome', 'Vitest'], Codegen: ['magicast', 'ts-morph', 'three-way merge'], Platform: ['Docker', 'GitHub Actions'] },
+    arch: {
+      tiers: [
+        { name: 'You', nodes: [{ label: 'npm create strutvane', sub: 'create-strutvane' }, { label: 'sv …', sub: 'global launcher' }] },
+        { name: 'CLI', nodes: [{ label: '@strutvane/cli', sub: 'project-local' }] },
+        { name: 'SDK', nodes: [{ label: 'devkit', sub: 'staged writes · env · AST · merge' }] },
+        { name: 'Packages', nodes: [{ label: 'Package installers', sub: 'framework · auth · ui · logs' }] },
+      ],
+      flow: [
+        'The global strutvane launcher walks up from the current folder to find node_modules/@strutvane/cli.',
+        'It hands off to that project-local CLI, so the CLI version always matches the project.',
+        'The CLI loads the installed packages’ installers and commands.',
+        'Commands run through devkit: every file change is staged, previewable and committed as one transaction.',
+        'When a second package is installed, its installer “enhances” the first, so install order never matters.',
+      ],
+    },
+    challenges: [
+      { q: 'Upgrades that never lose your edits.', a: 'Raw diff3 turned CRLF files into whole-file conflicts, so merging works on normalised content with line endings merged separately, verified base copies and a journaled apply (ADR-0012).' },
+      { q: 'A failed command must not break the project.', a: 'devkit stages every write and commits them together; it is git-aware and warns on a dirty working tree.' },
+    ],
+  },
+  {
+    id: 'strutvane-contracts', name: 'Strutvane Core & Contracts', tagline: 'The kernel, and the shared types every package speaks', kind: 'oss', org: 'vishwajit-vm', emoji: '🔗', color: '#FF8FB1', status: 'Contracts v0 built',
+    stats: ['0 runtime dependencies', '100% coverage', 'type-level tests'],
+    links: { code: 'https://github.com/vishwajit-vm/strutvane-contracts', docs: 'https://vishwajit-vm.github.io/strutvane-docs/packages/contracts/', npm: 'https://www.npmjs.com/package/@strutvane/contracts' },
+    packages: [
+      { name: '@strutvane/contracts', url: 'https://www.npmjs.com/package/@strutvane/contracts', note: 'v0 built and tested · release pending' },
+      { name: '@strutvane/core', url: 'https://www.npmjs.com/package/@strutvane/core', note: 'Kernel · github.com/vishwajit-vm/strutvane-core · Phase 1' },
+    ],
+    overview: 'The foundation of Strutvane. @strutvane/contracts holds the shared types and wire protocols — Actor, Permission, TenantContext, QueryFilter, ListQuery, Problem, ResourceManifest, AuditEvent and more — with zero runtime dependencies; it is the only thing the product packages share, and its v0 is built and fully tested. @strutvane/core is the kernel every app boots on: lifecycle, a typed service container, providers, validated config and per-request context.',
+    problem: 'Plugin ecosystems usually couple packages directly, so one upgrade cascades into all the others — and loosely typed shared objects let mistakes (like comparing a filter value to null) slip into production.',
+    why: 'A small, strictly versioned contracts package lets framework, auth and UI evolve independently, and its types are designed so misuse fails to compile.',
+    audience: 'Package and plugin authors, and advanced app developers.',
+    capabilities: [
+      'Share Actor, Permission and TenantContext types across every package.',
+      'Describe filters with QueryFilter, including normative NULL rules, and lists with ListQuery / ListResult.',
+      'Decide access through a deny-by-default PermissionProvider.',
+      'Return errors as RFC 9457 Problem objects with code, traceId and field issues.',
+      'Boot an app through core: register → boot → serve, with providers, Zod-validated env and request context via AsyncLocalStorage.',
+    ],
+    built: [
+      'Built @strutvane/contracts v0: 14 source files, runtime and type-level tests (Vitest type tests), 100% coverage and a publint-clean build via tsdown.',
+      'Its CI runs Biome, TypeScript, Vitest with coverage, then the build — on every change.',
+      'Designed types that make misuse a compile error, such as comparing against null or using a permission without a dot.',
+      'Kept it validator-agnostic through Standard Schema, with no dependency, under strict semver with at most one major version a year.',
+      'Specified @strutvane/core: a decorator-free typed token container, defineProvider, frozen validated env, typed hooks and events, and a compiled registry instead of runtime file scanning for fast cold starts.',
+    ],
+    stack: { Language: ['TypeScript'], Testing: ['Vitest', 'type tests'], Tooling: ['tsdown', 'Biome', 'Changesets'], Standards: ['RFC 9457', 'Standard Schema'] },
+    arch: {
+      tiers: [
+        { name: 'Packages', nodes: [{ label: 'framework' }, { label: 'auth' }, { label: 'ui' }] },
+        { name: 'Kernel', nodes: [{ label: 'core', sub: 'container · providers · context' }] },
+        { name: 'Contracts', nodes: [{ label: '@strutvane/contracts', sub: 'types only · 0 deps' }] },
+        { name: 'Wire', nodes: [{ label: 'ListQuery · Problem · manifest', sub: 'over HTTP to the UI' }] },
+      ],
+      flow: [
+        'createApp starts the kernel; each package’s provider registers its services, then all providers boot.',
+        'Packages import contract types only — never each other.',
+        'The container resolves the real implementation, for example the PermissionProvider supplied by auth.',
+        'Per-request context (request id, trace id, actor, tenant, locale) flows implicitly through AsyncLocalStorage.',
+        'The same contract shapes travel over HTTP, so the UI understands every API the same way.',
+      ],
+    },
+    challenges: [
+      { q: 'Make misuse impossible, not just documented.', a: 'Type-level tests prove that wrong usages fail to compile.' },
+      { q: 'Dependency injection without decorators or reflection.', a: 'A typed token container: services are registered and resolved by typed tokens, fully checked by TypeScript.' },
+    ],
+  },
+  {
+    id: 'strutvane-logs', name: 'Strutvane Logs', tagline: 'Zero-config logging with a built-in log viewer', kind: 'oss', org: 'vishwajit-vm', emoji: '📜', color: '#9FD0FF', status: 'Designed · Phase 1',
+    stats: ['1.3–4× faster than pino', '+2.9 ms p99', 'spike · 44 tests'],
+    links: { code: 'https://github.com/vishwajit-vm/strutvane-logs', npm: 'https://www.npmjs.com/package/@strutvane/logs' },
+    packages: [{ name: '@strutvane/logs', url: 'https://www.npmjs.com/package/@strutvane/logs', note: 'Name reserved · planned for 0.1 alpha' }],
+    overview: '@strutvane/logs gives any Node app structured, non-blocking logs with zero configuration: automatic request and error logging, daily files with size caps and retention, secret redaction before anything is stored, and a built-in viewer at /_strutvane/logs with live tail, search and download. It is installed by default in Strutvane apps and also works in Express, Fastify, Hono and NestJS.',
+    problem: 'Good logging takes a day of setup — transports, rotation, retention, redaction, a way to read logs — and logs often leak secrets or slow requests down.',
+    why: 'Making safe, fast logging the default means every app starts with searchable logs and no leaked tokens — and the logger is designed to never crash the app it is watching.',
+    audience: 'Any Node.js app — Express, Fastify, Hono or NestJS — and every Strutvane app by default.',
+    capabilities: [
+      'Log structured records with automatic context (request id, actor, tenant).',
+      'Log every request and exception automatically.',
+      'Rotate files daily with size caps and 60-day retention.',
+      'Redact secrets before storage.',
+      'Read logs in a built-in viewer with live tail, search and download — local-only or permission-gated, and tenant-scoped.',
+    ],
+    built: [
+      'Designed the logging pipeline and viewer (RFC-0004).',
+      'Benchmarked it in spike 09 (44 tests plus a Linux-only test, 4 planted bugs caught): 1.3–4× faster than pino when writing files, adding only 2.9 ms at p99 under HTTP load.',
+      'Replaced a shared log file — which broke size rotation across processes in 24 of 28 files — with one file per process, merged by timestamp in the viewer (ADR-0015).',
+      'Fixed a shutdown bug that lost the exit code, using a flush deadline timer, and kept memory bounded by dropping low-severity records first and reporting the drop count.',
+    ],
+    stack: { Runtime: ['Node.js', 'TypeScript'], Integrations: ['Express', 'NestJS', 'Hono', 'Fastify'], Observability: ['OpenTelemetry'] },
+    arch: {
+      tiers: [
+        { name: 'Your app', nodes: [{ label: 'log.info(…)', sub: 'Express · Fastify · Hono · Nest' }] },
+        { name: 'Pipeline', nodes: [{ label: 'Context', sub: 'AsyncLocalStorage' }, { label: 'Redaction', sub: 'keys + 5 patterns' }] },
+        { name: 'Writer', nodes: [{ label: 'Priority queue', sub: 'bounded' }, { label: 'Batched appends', sub: 'one file per process' }] },
+        { name: 'Viewer', nodes: [{ label: '/_strutvane/logs', sub: 'tail · search · download' }] },
+      ],
+      flow: [
+        'Your code logs a record; the current request context is attached automatically.',
+        'Sensitive keys and five secret patterns are redacted before anything is serialized.',
+        'The record becomes one line (max 32 KB) and joins a bounded priority queue.',
+        'A writer flushes batches with appends, one file per process, rotating daily within size caps.',
+        'The viewer merges every process’s files by timestamp for live tail and search.',
+      ],
+    },
+    challenges: [
+      { q: 'Rotation broke across processes.', a: 'Each process writes its own file and the viewer merges them by timestamp (ADR-0015).' },
+      { q: 'Never crash or bloat the app.', a: 'A bounded queue drops low-severity records first and reports the drop count; a flush deadline keeps exit codes intact.' },
+    ],
+  },
+  {
+    id: 'strutvane-docs', name: 'Strutvane Docs & Tooling', tagline: 'The live docs site and the CI that keeps 12 repos in sync', kind: 'oss', org: 'vishwajit-vm', emoji: '📖', color: '#FFE07A', status: 'Live',
+    stats: ['29 docs pages', '2 link checkers', '3 OS × 2 Node versions'],
+    links: { live: 'https://vishwajit-vm.github.io/strutvane-docs/', code: 'https://github.com/vishwajit-vm/strutvane-docs' },
+    overview: 'Two repositories that are already shipped: strutvane-docs, the friendly, example-first documentation site (live on GitHub Pages), and strutvane-tooling, which keeps the configs and CI/release workflows of all 12 Strutvane repositories identical — including token-free npm publishing.',
+    problem: 'A polyrepo ecosystem drifts fast: every repo ends up with slightly different configs and workflows, and public docs start contradicting the design.',
+    why: 'One source of truth for configs and workflows, synced safely into every repo, keeps the ecosystem consistent — and docs that are link-checked on every build stay trustworthy.',
+    audience: 'Prospective users reading the docs, and maintainers of the Strutvane repositories.',
+    capabilities: [
+      'Read getting-started guides, concepts, package pages, reference and a “build a CRM in 2 hours” tutorial.',
+      'Trust every link: two link checkers run on each build.',
+      'Sync canonical configs into all repos with a dry run first; drift fails CI.',
+      'Publish releases without long-lived npm tokens, using trusted publishing with provenance.',
+    ],
+    built: [
+      'Built the docs site with Astro and Starlight: 29 pages across getting started, concepts, packages, reference, a tutorial and community — deployed to GitHub Pages on every push to main.',
+      'Added two link checkers (starlight-links-validator and a crawler over the built HTML) and a root-base build so a custom domain is ready.',
+      'Built strutvane-tooling: canonical TypeScript, Biome and Vitest configs (coverage thresholds 90/90/85/90), CI and release workflows, Dependabot config and a sync script using only Node built-ins.',
+      'Made sync safe: it validates the manifest first, rejects path traversal and unknown repos, normalises line endings to avoid false drift on Windows, and never deletes files.',
+      'Set up token-free releases with npm trusted publishing (OIDC) and provenance; an idempotent publish step derives the dist-tag from the version (ADR-0016).',
+    ],
+    stack: { Docs: ['Astro', 'Starlight', 'MDX'], Tooling: ['GitHub Actions', 'Biome', 'Vitest', 'Node.js'], Release: ['npm trusted publishing', 'Changesets'] },
+    arch: {
+      tiers: [
+        { name: 'Sources', nodes: [{ label: 'MDX pages', sub: 'strutvane-docs' }, { label: 'canonical/ configs', sub: 'strutvane-tooling' }] },
+        { name: 'Build & check', nodes: [{ label: 'Astro build' }, { label: 'Link checkers', sub: '2 independent' }, { label: 'sync:check', sub: 'fails on drift' }] },
+        { name: 'Delivery', nodes: [{ label: 'GitHub Pages', sub: 'live docs' }, { label: '12 repositories', sub: 'identical CI' }, { label: 'npm', sub: 'OIDC trusted publishing' }] },
+      ],
+      flow: [
+        'Docs are written as MDX; every push builds the site with Astro and runs both link checkers.',
+        'A passing build deploys to GitHub Pages automatically.',
+        'For configs, a maintainer edits a canonical file, previews with pnpm sync:dry, then syncs it into every repo.',
+        'Each repo runs its own CI; sync:check fails if anything drifts from the canonical files.',
+        'Releases publish to npm through trusted publishing, so no npm token is ever stored.',
+      ],
+    },
+    challenges: [
+      { q: 'False drift on Windows.', a: 'Line endings are normalised to LF before comparing, so autocrlf no longer looks like a change.' },
+      { q: 'A broken manifest could half-sync the ecosystem.', a: 'The manifest is validated first, unknown repos and path traversal are rejected, and the script never deletes.' },
+    ],
   },
   {
     id: 'concretewale', name: 'Concretewale', tagline: 'E-commerce & content platform for concrete construction', kind: 'freelance', org: 'Freelance', when: '2024', emoji: '🏗️', color: '#FFB59A', status: 'Live',

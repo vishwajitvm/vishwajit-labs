@@ -29,8 +29,9 @@ def get_kb_context() -> str:
     kb = load_kb()
     p = kb["profile"]
     out = ["ABOUT VISHWAJIT"]
-    for key in ("name", "title", "location", "experience", "summary", "current_role", "award", "availability", "contact", "resumes"):
-        out.append(f"- {key.replace('_', ' ').capitalize()}: {p[key]}")
+    for key in ("name", "title", "location", "experience", "summary", "current_role", "award", "open_source", "availability", "contact", "resumes"):
+        if p.get(key):
+            out.append(f"- {key.replace('_', ' ').capitalize()}: {p[key]}")
     out.append("- Links: " + ", ".join(f"{k}: {v}" for k, v in p["links"].items()))
 
     out.append("\nWORK HISTORY")
@@ -51,6 +52,9 @@ def get_kb_context() -> str:
         links = ", ".join(f"{k}: {v}" for k, v in (pr.get("links") or {}).items())
         body = head
         body += f"  Links: {links}\n" if links else "  Links: private / not public\n"
+        pkgs = pr.get("packages") or []
+        if pkgs:
+            body += "  npm packages: " + "; ".join(f"{x['name']} ({x['url']}): {x['note']}" for x in pkgs) + "\n"
         body += f"  Overview: {pr['overview']}\n  Problem: {pr['problem']}\n  Why it matters: {pr['why']}\n  For: {pr['audience']}\n"
         body += _lines("Key numbers", pr.get("stats"))
         body += _lines("What it does", pr.get("capabilities"))
@@ -69,7 +73,10 @@ def _norm(s: str) -> str:
 def find_project(message: str) -> Optional[dict]:
     """The project a question names, if any (used by the offline fallback)."""
     text = _norm(message)
+    best, best_len = None, 0
     for pr in load_kb()["projects"]:
-        if _norm(pr["name"]) in text or _norm(pr["id"]) in text:
-            return pr
-    return None
+        # Prefer the most specific match, so "Strutvane Auth" beats "Strutvane".
+        for key in (_norm(pr["name"]), _norm(pr["id"])):
+            if key and key in text and len(key) > best_len:
+                best, best_len = pr, len(key)
+    return best

@@ -59,6 +59,8 @@ def offline_answer(message: str) -> str:
         link = next(iter((pr.get("links") or {}).values()), None)
         return pr["overview"] + (f" More: {link}" if link else " Open its card in the projects section for the full case study.")
     m = message.lower()
+    if p.get("open_source") and any(w in m for w in ("npm", "open source", "open-source", "package", "library", "organisation", "organization")):
+        return f"{p['open_source']} npm: {p['links'].get('npm', '')} · GitHub: {p['links'].get('open_source_org', '')}"
     if any(w in m for w in ("hire", "freelance", "contract", "available", "availability", "rate", "job")):
         return f"{p['availability']} {p['contact']}"
     if any(w in m for w in ("stack", "skill", "tech", "tools", "language")):

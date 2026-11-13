@@ -4,7 +4,13 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import type { Work } from '@/data/work';
 import { Icon } from '@/components/v3/Icon';
 
-const TABS: [string, string][] = [['overview', 'Overview'], ['problem', 'Problem'], ['features', 'What it does'], ['architecture', 'Architecture'], ['stack', 'Tech stack'], ['built', 'What I built'], ['decisions', 'Decisions']];
+export const kindLabel = (w: Work) =>
+  w.kind === 'product' ? 'My product'
+    : w.kind === 'oss' ? `Open source · ${w.org}`
+      : w.kind === 'freelance' ? 'Freelance project'
+        : `Built at ${w.org}`;
+
+const TABS: [string, string][] =[['overview', 'Overview'], ['problem', 'Problem'], ['features', 'What it does'], ['architecture', 'Architecture'], ['stack', 'Tech stack'], ['built', 'What I built'], ['decisions', 'Decisions']];
 
 export function ArchDiagram({ w }: { w: Work }) {
   return (
@@ -47,7 +53,7 @@ export default function ProjectDetail({ w, header = true }: { w: Work; header?: 
         <div className="m-head">
           <span className="m-emoji">{w.emoji}</span>
           <div>
-            <p className="m-kind">{w.kind === 'product' ? 'My product' : w.kind === 'freelance' ? 'Freelance project' : `Built at ${w.org}`}{w.when ? ` · ${w.when}` : ''} <span className="pd-status">{w.status}</span></p>
+            <p className="m-kind">{kindLabel(w)}{w.when ? ` · ${w.when}` : ''} <span className="pd-status">{w.status}</span></p>
             <h3>{w.name}</h3>
             <p className="m-tag">{w.tagline}</p>
           </div>
@@ -65,9 +71,21 @@ export default function ProjectDetail({ w, header = true }: { w: Work; header?: 
         <div className="m-links">
           {w.links.live && <a className="btn btn-orange pop" href={w.links.live} target="_blank" rel="noopener">Visit live site ↗</a>}
           {w.links.code && <a className="btn btn-ink pop" href={w.links.code} target="_blank" rel="noopener">View code ↗</a>}
+          {w.links.docs && <a className="btn btn-orange pop" href={w.links.docs} target="_blank" rel="noopener">Read the docs ↗</a>}
           {w.links.pypi && <a className="btn btn-paper pop" href={w.links.pypi} target="_blank" rel="noopener">On PyPI ↗</a>}
-          {!w.links.live && !w.links.code && !w.links.pypi && <span className="pd-private">🔒 Private client codebase — details shared with permission</span>}
+          {w.links.npm && <a className="btn btn-paper pop" href={w.links.npm} target="_blank" rel="noopener">On npm ↗</a>}
+          {!w.links.live && !w.links.code && !w.links.pypi && !w.links.npm && !w.links.docs && <span className="pd-private">🔒 Private client codebase — details shared with permission</span>}
         </div>
+        {w.packages && w.packages.length > 0 && (
+          <div className="pd-pkgs">
+            <h4 className="pd-h">Packages on npm</h4>
+            <ul>
+              {w.packages.map((p) => (
+                <li key={p.name}><a href={p.url} target="_blank" rel="noopener"><code>{p.name}</code> ↗</a><span>{p.note}</span></li>
+              ))}
+            </ul>
+          </div>
+        )}
         <p className="pd-scroll">↓ Scroll to explore the problem, architecture and stack</p>
       </section>
 

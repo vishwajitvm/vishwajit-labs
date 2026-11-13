@@ -365,6 +365,14 @@ a { color: inherit; text-decoration: none; }
 .pd-lead { margin: 4px 0 16px; font: 600 clamp(19px, 2.2vw, 23px)/1.5 var(--display); letter-spacing: -0.01em; }
 .pd-aud { margin: 0 0 4px; color: var(--ink2); font-size: 16px; line-height: 1.55; }
 .pd-private { padding: 10px 14px; border-radius: 12px; border: 2px dashed rgba(21, 19, 15, .35); font: 600 14px var(--body); color: var(--ink2); }
+.pd-pkgs { margin-top: 26px; }
+.pd-pkgs ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.pd-pkgs li { display: flex; flex-direction: column; gap: 3px; padding: 11px 14px; border-radius: 14px; border: 2px solid var(--ink); background: color-mix(in srgb, var(--c) 22%, var(--paper)); }
+.pd-pkgs a { color: var(--ink); text-decoration: none; font-weight: 700; }
+.pd-pkgs a:hover { text-decoration: underline; }
+.pd-pkgs code { font: 700 13.5px var(--mono); }
+.pd-pkgs span { font-size: 14px; line-height: 1.4; color: var(--ink2); }
+@media (max-width: 640px) { .pd-pkgs ul { grid-template-columns: 1fr; } }
 .pd-scroll { margin: 18px 0 0; font: 700 13px var(--mono); color: var(--muted); animation: bob 2s ease-in-out infinite; }
 .pd-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .pd-box { position: relative; padding: 20px 22px; border-radius: 20px; border: 2px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); transition: transform .2s; }

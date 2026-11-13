@@ -29,7 +29,11 @@ const PROFILE = {
     hashnode: 'https://hashnode.com/@Vishwajitvm',
     x: 'https://www.twitter.com/VishwajitVm',
     pypi: 'https://pypi.org/user/vishwajitvm/',
+    npm: 'https://www.npmjs.com/~vishwajitjitvm',
+    open_source_org: 'https://github.com/vishwajit-vm',
   },
+  open_source:
+    'Maintains the vishwajit-vm GitHub organisation, home of Strutvane: an open-source TypeScript framework and package ecosystem for enterprise B2B apps. Phase 0 (foundations) is complete and Phase 1 is next. Its 10 npm package names (strutvane, create-strutvane and @strutvane/*) are reserved placeholders; nothing is released on npm yet.',
 };
 
 const knowledge = {
@@ -39,7 +43,7 @@ const knowledge = {
   skills: STACK_LAYERS.map((L) => ({ area: L.label, detail: L.sub, tools: L.items })),
   projects: WORK.map((w) => ({
     id: w.id, name: w.name, tagline: w.tagline, kind: w.kind, org: w.org, when: w.when, status: w.status,
-    stats: w.stats, links: w.links, overview: w.overview, problem: w.problem, why: w.why, audience: w.audience,
+    stats: w.stats, links: w.links, packages: w.packages, overview: w.overview, problem: w.problem, why: w.why, audience: w.audience,
     capabilities: w.capabilities, built: w.built, stack: w.stack, challenges: w.challenges,
   })),
 };

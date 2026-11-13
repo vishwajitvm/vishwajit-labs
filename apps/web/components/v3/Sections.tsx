@@ -107,7 +107,7 @@ function Modal({ w, onClose, onNav }: { w: Work; onClose: () => void; onNav: (d:
   );
 }
 export function WorkGrid() {
-  const [filter, setFilter] = useState<'all' | 'product' | 'client' | 'freelance'>('all');
+  const [filter, setFilter] = useState<'all' | Work['kind']>('all');
   const [open, setOpen] = useState<number | null>(null);
   const list = useMemo(() => WORK.filter((w) => filter === 'all' || w.kind === filter), [filter]);
   const openAt = (i: number) => { setOpen(i); request('GET', `/projects/${list[i].id}`); };
@@ -116,7 +116,7 @@ export function WorkGrid() {
       <p className="eyebrow">Selected work</p>
       <h2 className="h2" data-perch>Things I’ve built <span className="scribble">&amp; shipped</span>.</h2>
       <div className="filters">
-        {([['all', `Everything · ${WORK.length}`], ['product', 'My products'], ['freelance', 'Freelance'], ['client', 'Client & company work']] as const).map(([k, l]) => (
+        {([['all', `Everything · ${WORK.length}`], ['product', 'My products'], ['oss', 'Open source & npm'], ['freelance', 'Freelance'], ['client', 'Client & company work']] as const).map(([k, l]) => (
           <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>{l}</button>
         ))}
       </div>
@@ -124,7 +124,7 @@ export function WorkGrid() {
         {list.map((w, i) => (
           <button key={w.id} className={`card ${w.featured ? 'feat' : ''}`} style={{ ['--c' as string]: w.color }}
             data-svc={w.id} data-break data-hide data-push data-perch onMouseMove={tilt} onMouseLeave={untilt} onClick={() => openAt(i)}>
-            <span className="c-top"><span className="c-emoji">{w.emoji}</span><span className="c-kind">{w.kind === 'product' ? 'my product' : w.kind === 'freelance' ? 'freelance' : w.org}</span><span className="health" data-health>healthy</span></span>
+            <span className="c-top"><span className="c-emoji">{w.emoji}</span><span className="c-kind">{w.kind === 'product' ? 'my product' : w.kind === 'oss' ? 'open source' : w.kind === 'freelance' ? 'freelance' : w.org}</span><span className="health" data-health>healthy</span></span>
             <span className="c-name">{w.name}</span>
             <span className="c-tag">{w.tagline}</span>
             {w.stats && <span className="c-stats">{w.stats.map((s) => <i key={s}>{s}</i>)}</span>}
@@ -206,8 +206,7 @@ export function GitHubLive() {
         <div className="gh-stats">
           <div className="tile c-butter" data-perch><b>{user?.public_repos ?? '—'}</b><span>public repositories</span></div>
           <div className="tile c-mint" data-perch><b>{user?.followers ?? '—'}</b><span>followers</span></div>
-          <a className="tile c-lilac gh-cta" href="https://github.com/vishwajitvm" target="_blank" rel="noopener"><b>@vishwajitvm</b><span>Follow on GitHub ↗</span></a>
-        </div>
+          <a className="tile c-lilac gh-cta" href="https://github.com/vishwajitvm" target="_blank" rel="noopener"><b>@vishwajitvm</b><span>Follow on GitHub ↗</span></a>        </div>
         {chartOk && <div className="gh-chart tile"><img src="https://ghchart.rshah.org/FF5B1F/vishwajitvm" alt="GitHub contribution chart" onError={() => setChartOk(false)} /></div>}
         <div className="gh-repos">
           {repos.map((r) => (
@@ -252,6 +251,8 @@ export function ContactBlock() {
             <a href="https://hashnode.com/@Vishwajitvm" target="_blank" rel="noopener">Hashnode ↗</a>
             <a href="https://www.twitter.com/VishwajitVm" target="_blank" rel="noopener">X ↗</a>
             <a href="https://pypi.org/user/vishwajitvm/" target="_blank" rel="noopener">PyPI ↗</a>
+            <a href="https://www.npmjs.com/~vishwajitjitvm" target="_blank" rel="noopener">npm ↗</a>
+            <a href="https://github.com/vishwajit-vm" target="_blank" rel="noopener">GitHub org ↗</a>
           </div>
         </div>
         {state === 'sent' ? (
